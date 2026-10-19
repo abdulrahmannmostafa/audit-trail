@@ -1,3 +1,4 @@
+
 package com.qeema.util.identity.service;
 
 import com.qeema.util.identity.entity.User;
@@ -9,45 +10,96 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Collection;
 
 @Service
 public class UserProvisioningService {
 
     private final UserRepository userRepository;
     private final UserIdentityRepository identityRepository;
+    private final UserRoleService userRoleService;
 
     public UserProvisioningService(
             UserRepository userRepository,
-            UserIdentityRepository identityRepository) {
+            UserIdentityRepository identityRepository,
+            UserRoleService userRoleService) {
         this.userRepository = userRepository;
         this.identityRepository = identityRepository;
+        this.userRoleService = userRoleService;
     }
 
-    // Load the user in the transactional context to avoid lazy exception when
-    // accessing the user entity later
-    @Transactional(readOnly = true)
-    public User provision(Jwt jwt) {
+    private List<String> extractKeycloakRoles(Jwt jwt) {
+        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
 
+        if (realmAccess == null) {
+            return List.of();
+        }
+
+        Object rolesObject = realmAccess.get("roles");
+
+        if (!(rolesObject instanceof Collection<?> roles)) {
+            return List.of();
+        }
+
+        return roles.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .map(role -> role.trim().toUpperCase(Locale.ROOT))
+                .filter(role -> !role.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    @Transactional
+    public User provision(Jwt jwt) {
         String issuer = jwt.getIssuer().toString();
         String subject = jwt.getSubject();
+
+        Optional<UserIdentity> existingIdentity = identityRepository
+                .findByIssuerAndSubjectWithUser(issuer, subject);
+
+        if (existingIdentity.isPresent()) {
+            return existingIdentity.get().getUser();
+        }
+
+        return createUser(jwt, issuer, subject);
+    }
+
+    private User createUser(
+            Jwt jwt, String issuer, String subject) {
+
         String email = jwt.getClaimAsString("email");
         String displayName = jwt.getClaimAsString("name");
 
-        return identityRepository
-                .findByIssuerAndSubjectWithUser(issuer, subject)
-                .map(identity -> identity.getUser())
-                .orElseGet(() -> createUser(issuer, subject, "keycloak", email, displayName));
-    }
+        if (email == null || email.isBlank()) {
+            throw new IllegalStateException(
+                    "The validated token has no email claim. "
+                            + "Configure the email claim in Keycloak.");
+        }
 
-    private User createUser(String issuer, String subject, String provider, String email, String displayName) {
+        if (displayName == null || displayName.isBlank()) {
+            displayName = email;
+        }
 
         User user = userRepository.saveAndFlush(
                 new User(email, displayName, Optional.empty()));
 
-        UserIdentity identity = new UserIdentity(user, provider, issuer, subject);
+        UserIdentity identity = new UserIdentity(
+                user, "keycloak", issuer, subject);
 
-        identityRepository.save(identity);
+        identityRepository.saveAndFlush(identity);
+
+        List<String> keycloakRoles = extractKeycloakRoles(jwt);
+
+        for (String role : keycloakRoles) {
+            if (role.equals("USER") || role.equals("ADMIN")) {
+                userRoleService.assignRole(user.getId(), role);
+            }
+        }
 
         return user;
     }

@@ -1,21 +1,18 @@
-CREATE TABLE IF NOT EXISTS `user` (
+-- Identity and application roles
+CREATE TABLE `user` (
     `id`           CHAR(36)     NOT NULL,
     `email`        VARCHAR(255) NOT NULL,
     `display_name` VARCHAR(120) NOT NULL,
     `avatar_url`   VARCHAR(500) NULL,
     `status`       VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
     `created_at`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                ON UPDATE CURRENT_TIMESTAMP,
+    `updated_at`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_user_email` (`email`),
     CONSTRAINT `chk_user_status` CHECK (`status` IN ('ACTIVE', 'DISABLED'))
 ) ENGINE=InnoDB;
 
--- user_identity: links a local user to an external OIDC identity
--- The stable identity key is (issuer, subject), NOT email
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `user_identity` (
+CREATE TABLE `user_identity` (
     `id`         CHAR(36)     NOT NULL,
     `user_id`    CHAR(36)     NOT NULL,
     `provider`   VARCHAR(50)  NOT NULL,
@@ -30,18 +27,14 @@ CREATE TABLE IF NOT EXISTS `user_identity` (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- app_role: application-level roles (USER , ADMIN , ...)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `app_role` (
+CREATE TABLE `app_role` (
     `id`   INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(50)  NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_app_role_name` (`name`)
 ) ENGINE=InnoDB;
 
--- user_role: many-to-many between user and app_role
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `user_role` (
+CREATE TABLE `user_role` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT,
     `user_id`     CHAR(36)     NOT NULL,
     `role_id`     INT UNSIGNED NOT NULL,

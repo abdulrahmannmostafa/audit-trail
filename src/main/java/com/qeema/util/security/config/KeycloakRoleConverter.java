@@ -1,41 +1,57 @@
 package com.qeema.util.security.config;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import com.qeema.util.identity.entity.User;
+import com.qeema.util.identity.service.UserProvisioningService;
+import com.qeema.util.identity.service.UserRoleService;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
 @Component
 public class KeycloakRoleConverter
         implements Converter<Jwt, Collection<GrantedAuthority>> {
 
+    private final UserProvisioningService provisioningService;
+    private final UserRoleService userRoleService;
+
+    public KeycloakRoleConverter(
+            UserProvisioningService provisioningService,
+            UserRoleService userRoleService) {
+        this.provisioningService = provisioningService;
+        this.userRoleService = userRoleService;
+    }
+
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
 
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+        // Find or create the local application user
+        User user = provisioningService.provision(jwt);
 
-        if (realmAccess == null) {
-            return authorities;
+        // Do not authorize disabled application accounts
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(
+                            "invalid_token",
+                            "This application account is disabled.",
+                            null));
         }
 
-        Object rolesObject = realmAccess.get("roles");
+        // Load roles from MySQL, not from Keycloak's role claims
+        List<String> roleNames = userRoleService.getRoleNames(user.getId());
 
-        if (rolesObject instanceof List<?> roles) {
-            for (Object role : roles) {
-                if (role instanceof String roleName) {
-                    authorities.add(
-                            new SimpleGrantedAuthority("ROLE_" + roleName));
-                }
-            }
-        }
-
-        return authorities;
+        return roleNames.stream()
+                .map(name -> name.toUpperCase(Locale.ROOT))
+                .distinct()
+                .map(name -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + name))
+                .toList();
     }
 }
