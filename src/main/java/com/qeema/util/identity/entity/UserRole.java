@@ -68,4 +68,24 @@ public class UserRole {
     public Instant getAssignedAt() {
         return assignedAt;
     }
+
+    public void setAssignedAt(Instant assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public UserRole(User user, AppRole role, Instant assignedAt) {
+        this.user = user;
+        this.role = role;
+        this.assignedAt = assignedAt;
+    }
+
+    @Override
+    public String toString() {
+        return "UserRole{" +
+                "id=" + id +
+                ", user=" + (user != null ? user.getId() : null) +
+                ", role=" + (role != null ? role.getId() : null) +
+                ", assignedAt=" + assignedAt +
+                '}';
+    }
 }

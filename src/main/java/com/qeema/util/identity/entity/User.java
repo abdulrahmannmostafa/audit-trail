@@ -9,6 +9,11 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+interface Status {
+    String ACTIVE = "ACTIVE";
+    String DISABLED = "DISABLED";
+}
+
 @Entity
 @Table(name = "user")
 public class User {
@@ -27,7 +32,7 @@ public class User {
     private String avatarUrl;
 
     @Column(name = "status", length = 20, nullable = false)
-    private String status = "ACTIVE";
+    private String status = Status.ACTIVE;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
