@@ -7,6 +7,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 interface Status {
@@ -50,10 +51,10 @@ public class User {
     public User() {
     }
 
-    public User(String email, String displayName, String avatarUrl) {
+    public User(String email, String displayName, Optional<String> avatarUrl) {
         this.email = email;
         this.displayName = displayName;
-        this.avatarUrl = avatarUrl;
+        this.avatarUrl = avatarUrl.orElse(null);
     }
 
     public String getId() {
