@@ -6,4 +6,7 @@ public class EmailSendingException extends RuntimeException {
         super(message);
     }
 
+    public EmailSendingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

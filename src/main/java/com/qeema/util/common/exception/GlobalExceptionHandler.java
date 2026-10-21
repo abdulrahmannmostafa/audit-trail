@@ -94,6 +94,17 @@ public class GlobalExceptionHandler {
                                 Map.of());
         }
 
+        @ExceptionHandler(EmailSendingException.class)
+        public ResponseEntity<ApiError> handleEmailSending(
+                EmailSendingException exception,
+                WebRequest request) {
+            return response(
+                                HttpStatus.BAD_GATEWAY,
+                                "The email provider could not accept the message",
+                                request,
+                                Map.of());
+        }
+
         @ExceptionHandler(IllegalArgumentException.class)
         public ResponseEntity<ApiError> handleIllegalArgument(
                         IllegalArgumentException exception,

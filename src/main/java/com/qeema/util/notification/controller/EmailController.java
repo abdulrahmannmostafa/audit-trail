@@ -1,12 +1,17 @@
-
 package com.qeema.util.notification.controller;
 
-import com.qeema.util.notification.dto.EmailRequest;
-import com.qeema.util.notification.dto.EmailResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.qeema.util.notification.dto.SendEmailRequest;
+import com.qeema.util.notification.dto.SendEmailResponse;
 import com.qeema.util.notification.service.EmailService;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/emails")
@@ -19,14 +24,9 @@ public class EmailController {
     }
 
     @PostMapping("/send")
-    public ResponseEntity<EmailResponse> sendEmail(
-            @RequestBody EmailRequest request) {
-
-        emailService.sendEmail(request);
-
-        return ResponseEntity.ok(
-                new EmailResponse(
-                        "Email accepted by the SMTP server",
-                        "ACCEPTED"));
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public SendEmailResponse sendEmail(
+            @Valid @RequestBody SendEmailRequest request) {
+        return emailService.sendEmail(request);
     }
 }
