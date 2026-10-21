@@ -3,6 +3,7 @@ package com.qeema.util.identity.service;
 
 import com.qeema.util.identity.entity.User;
 import com.qeema.util.identity.entity.UserIdentity;
+import com.qeema.util.common.exception.InvalidIdentityTokenException;
 import com.qeema.util.identity.dto.UserResponse;
 import com.qeema.util.identity.repository.UserIdentityRepository;
 import com.qeema.util.identity.repository.UserRepository;
@@ -23,6 +24,9 @@ public class UserProvisioningService {
     private final UserRepository userRepository;
     private final UserIdentityRepository identityRepository;
     private final UserRoleService userRoleService;
+
+    private final String USER_ROLE = "USER";
+    private final String ADMIN_ROLE = "ADMIN";
 
     public UserProvisioningService(
             UserRepository userRepository,
@@ -77,7 +81,7 @@ public class UserProvisioningService {
         String displayName = jwt.getClaimAsString("name");
 
         if (email == null || email.isBlank()) {
-            throw new IllegalStateException(
+            throw new InvalidIdentityTokenException(
                     "The validated token has no email claim. "
                             + "Configure the email claim in Keycloak.");
         }
@@ -97,7 +101,7 @@ public class UserProvisioningService {
         List<String> keycloakRoles = extractKeycloakRoles(jwt);
 
         for (String role : keycloakRoles) {
-            if (role.equals("USER") || role.equals("ADMIN")) {
+            if (role.equals(USER_ROLE) || role.equals(ADMIN_ROLE)) {
                 userRoleService.assignRole(user.getId(), role);
             }
         }
