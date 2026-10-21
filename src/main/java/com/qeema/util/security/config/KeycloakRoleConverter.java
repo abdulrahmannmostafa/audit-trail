@@ -1,8 +1,8 @@
 package com.qeema.util.security.config;
 
-import com.qeema.util.identity.dto.UserResponse;
-import com.qeema.util.identity.service.UserProvisioningService;
-import com.qeema.util.identity.service.UserRoleService;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,9 +12,10 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import com.qeema.util.common.exception.InvalidIdentityTokenException;
+import com.qeema.util.identity.dto.UserResponse;
+import com.qeema.util.identity.service.UserProvisioningService;
+import com.qeema.util.identity.service.UserRoleService;
 
 @Component
 public class KeycloakRoleConverter
@@ -34,10 +35,20 @@ public class KeycloakRoleConverter
     public Collection<GrantedAuthority> convert(Jwt jwt) {
 
         // Find or create the local application user
-        UserResponse user = provisioningService.provision(jwt);
+        UserResponse user;
+        try {
+            user = provisioningService.provision(jwt);
+        } catch (InvalidIdentityTokenException exception) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(
+                            "invalid_token",
+                            "The access token is missing required identity claims.",
+                            null),
+                    exception);
+        }
 
         // Do not authorize disabled application accounts
-        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+        if (!"ACTIVE".equalsIgnoreCase(user.status())) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error(
                             "invalid_token",
@@ -46,7 +57,7 @@ public class KeycloakRoleConverter
         }
 
         // Load roles from MySQL, not from Keycloak's role claims
-        List<String> roleNames = userRoleService.getRoleNames(user.getId());
+        List<String> roleNames = userRoleService.getRoleNames(user.id());
 
         return roleNames.stream()
                 .map(name -> name.toUpperCase(Locale.ROOT))
