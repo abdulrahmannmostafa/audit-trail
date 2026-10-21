@@ -19,9 +19,12 @@ import com.qeema.util.notification.dto.PreviewEmailResponse;
 import com.qeema.util.notification.service.EmailTemplateService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Validated
+@Tag(name = "Email templates", description = "Manage and preview email templates")
 @RequestMapping("/api/admin/email-templates")
 public class EmailTemplateController {
 
@@ -32,11 +35,13 @@ public class EmailTemplateController {
     }
 
     @GetMapping
+    @Operation(summary = "List email templates")
     public List<EmailTemplateResponse> getTemplates() {
         return templateService.getTemplates();
     }
 
     @PostMapping("/preview")
+    @Operation(summary = "Preview an email template")
     public PreviewEmailResponse preview(
             @Valid @RequestBody PreviewEmailRequest request) {
         return templateService.preview(
@@ -45,17 +50,20 @@ public class EmailTemplateController {
     }
 
     @PostMapping
+    @Operation(summary = "Create an email template")
     public EmailTemplateResponse createTemplate(
             @Valid @RequestBody EmailTemplateRequest request) {
         return templateService.create(request);
     }
 
     @GetMapping("/{name}")
+    @Operation(summary = "Get an email template")
     public EmailTemplateResponse getTemplate(@PathVariable String name) {
         return templateService.getTemplate(name);
     }
 
     @PutMapping("/{name}")
+    @Operation(summary = "Update an email template")
     public EmailTemplateResponse updateTemplate(
             @PathVariable String name,
             @Valid @RequestBody EmailTemplateRequest request) {
@@ -63,6 +71,7 @@ public class EmailTemplateController {
     }
 
     @DeleteMapping("/{name}")
+    @Operation(summary = "Delete an email template")
     public void deleteTemplate(@PathVariable String name) {
         templateService.delete(name);
     }

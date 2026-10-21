@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.qeema.util.notification.dto.SendEmailRequest;
 import com.qeema.util.notification.dto.SendEmailResponse;
 import com.qeema.util.notification.service.EmailService;
@@ -14,6 +17,7 @@ import com.qeema.util.notification.service.EmailService;
 import jakarta.validation.Valid;
 
 @RestController
+@Tag(name = "Email", description = "Send transactional emails")
 @RequestMapping("/api/admin/emails")
 public class EmailController {
 
@@ -24,6 +28,9 @@ public class EmailController {
     }
 
     @PostMapping("/send")
+    @Operation(
+            summary = "Send an email",
+            description = "Sends a plain-text email or renders an enabled email template.")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public SendEmailResponse sendEmail(
             @Valid @RequestBody SendEmailRequest request) {
