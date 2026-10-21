@@ -23,6 +23,8 @@ public class KeycloakRoleConverter
 
     private final UserProvisioningService provisioningService;
     private final UserRoleService userRoleService;
+    private final String ACTIVE_STATUS = "ACTIVE";
+    private final String ROLE_PREFIX = "ROLE_";
 
     public KeycloakRoleConverter(
             UserProvisioningService provisioningService,
@@ -48,7 +50,7 @@ public class KeycloakRoleConverter
         }
 
         // Do not authorize disabled application accounts
-        if (!"ACTIVE".equalsIgnoreCase(user.status())) {
+        if (!ACTIVE_STATUS.equalsIgnoreCase(user.status())) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error(
                             "invalid_token",
@@ -62,7 +64,7 @@ public class KeycloakRoleConverter
         return roleNames.stream()
                 .map(name -> name.toUpperCase(Locale.ROOT))
                 .distinct()
-                .map(name -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + name))
+                .map(name -> (GrantedAuthority) new SimpleGrantedAuthority(ROLE_PREFIX + name))
                 .toList();
     }
 }
