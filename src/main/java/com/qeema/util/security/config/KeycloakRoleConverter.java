@@ -1,6 +1,6 @@
 package com.qeema.util.security.config;
 
-import com.qeema.util.identity.entity.User;
+import com.qeema.util.identity.dto.UserResponse;
 import com.qeema.util.identity.service.UserProvisioningService;
 import com.qeema.util.identity.service.UserRoleService;
 
@@ -34,7 +34,7 @@ public class KeycloakRoleConverter
     public Collection<GrantedAuthority> convert(Jwt jwt) {
 
         // Find or create the local application user
-        User user = provisioningService.provision(jwt);
+        UserResponse user = provisioningService.provision(jwt);
 
         // Do not authorize disabled application accounts
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {

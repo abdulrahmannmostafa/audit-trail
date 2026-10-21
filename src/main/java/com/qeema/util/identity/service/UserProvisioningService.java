@@ -3,6 +3,7 @@ package com.qeema.util.identity.service;
 
 import com.qeema.util.identity.entity.User;
 import com.qeema.util.identity.entity.UserIdentity;
+import com.qeema.util.identity.dto.UserResponse;
 import com.qeema.util.identity.repository.UserIdentityRepository;
 import com.qeema.util.identity.repository.UserRepository;
 
@@ -55,7 +56,7 @@ public class UserProvisioningService {
     }
 
     @Transactional
-    public User provision(Jwt jwt) {
+    public UserResponse provision(Jwt jwt) {
         String issuer = jwt.getIssuer().toString();
         String subject = jwt.getSubject();
 
@@ -63,10 +64,10 @@ public class UserProvisioningService {
                 .findByIssuerAndSubjectWithUser(issuer, subject);
 
         if (existingIdentity.isPresent()) {
-            return existingIdentity.get().getUser();
+            return toResponse(existingIdentity.get().getUser());
         }
 
-        return createUser(jwt, issuer, subject);
+        return toResponse(createUser(jwt, issuer, subject));
     }
 
     private User createUser(
@@ -102,5 +103,13 @@ public class UserProvisioningService {
         }
 
         return user;
+    }
+
+    private UserResponse toResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getDisplayName(),
+                user.getStatus());
     }
 }
