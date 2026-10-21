@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.qeema.util.identity.entity.User;
+import com.qeema.util.identity.dto.UserResponse;
 import com.qeema.util.identity.service.UserProvisioningService;
 
 @RestController
@@ -28,22 +28,8 @@ public class ProvisionController {
     }
 
     @GetMapping("/me")
-    public MeResponse currentUser(
+    public UserResponse currentUser(
             @AuthenticationPrincipal Jwt jwt) {
-
-        User user = provisioningService.provision(jwt);
-
-        return new MeResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getStatus());
-    }
-
-    public record MeResponse(
-            String id,
-            String email,
-            String displayName,
-            String status) {
+        return provisioningService.provision(jwt);
     }
 }

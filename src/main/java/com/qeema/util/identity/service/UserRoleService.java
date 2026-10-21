@@ -4,6 +4,8 @@ package com.qeema.util.identity.service;
 import com.qeema.util.identity.entity.AppRole;
 import com.qeema.util.identity.entity.User;
 import com.qeema.util.identity.entity.UserRole;
+import com.qeema.util.identity.dto.RoleResponse;
+import com.qeema.util.common.exception.ResourceNotFoundException;
 import com.qeema.util.identity.repository.AppRoleRepository;
 import com.qeema.util.identity.repository.UserRepository;
 import com.qeema.util.identity.repository.UserRoleRepository;
@@ -41,15 +43,22 @@ public class UserRoleService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RoleResponse> getRoles() {
+        return appRoleRepository.findAll().stream()
+                .map(role -> new RoleResponse(role.getId(), role.getName()))
+                .toList();
+    }
+
     @Transactional
     public void assignRole(String userId, String roleName) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String normalizedName = roleName.trim().toUpperCase(Locale.ROOT);
 
         AppRole role = appRoleRepository.findByName(normalizedName)
-                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         if (!userRoleRepository.existsByUserIdAndRoleId(
                 userId, role.getId().toString())) {
@@ -61,7 +70,7 @@ public class UserRoleService {
     public void removeRole(String userId, String roleName) {
         String normalizedName = roleName.trim().toUpperCase(Locale.ROOT);
         AppRole role = appRoleRepository.findByName(normalizedName)
-                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         userRoleRepository.deleteByUserIdAndRoleId(
                 userId, role.getId().toString());

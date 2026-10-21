@@ -5,30 +5,23 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import com.qeema.util.identity.repository.AppRoleRepository;
+import com.qeema.util.identity.dto.RoleResponse;
 import com.qeema.util.identity.service.UserRoleService;
 
 @RestController
 @RequestMapping("/api/admin")
 public class AdminRoleController {
 
-    private final AppRoleRepository roleRepository;
     private final UserRoleService userRoleService;
 
     public AdminRoleController(
-            AppRoleRepository roleRepository,
             UserRoleService userRoleService) {
-        this.roleRepository = roleRepository;
         this.userRoleService = userRoleService;
     }
 
     @GetMapping("/roles")
     public List<RoleResponse> getRoles() {
-        return roleRepository.findAll().stream()
-                .map(role -> new RoleResponse(
-                        role.getId(),
-                        role.getName()))
-                .toList();
+        return userRoleService.getRoles();
     }
 
     @GetMapping("/users/{userId}/roles")
@@ -53,8 +46,4 @@ public class AdminRoleController {
         userRoleService.removeRole(userId, roleName);
     }
 
-    public record RoleResponse(
-            Integer id,
-            String name) {
-    }
 }
