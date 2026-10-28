@@ -1,11 +1,33 @@
 server:
   port: 8080
 
+app:
+  storage:
+    silo:
+      endpoint: http://localhost:9100
+      region: us-east-1
+      access-key: ${SILO_ROOT_USER:silo-admin}
+      secret-key: ${SILO_ROOT_PASSWORD:silo-password-change-me}
+      bucket: util-bucket
+
 spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3307/demo_db}
-    username: ${DB_USERNAME:demo_user}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:local-db-password}
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
   jpa:
     hibernate:

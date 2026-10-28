@@ -1,0 +1,590 @@
+{
+  "info": {
+    "_postman_id": "c1fcb9a5-6e22-4a47-9c0e-5a77f47ea001",
+    "name": "Qeema Util API",
+    "description": "Mentor demonstration collection for the Qeema identity, roles, email, and document APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "documentId",
+      "value": ""
+    },
+    {
+      "key": "templateName",
+      "value": "welcome-email"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "roleName",
+      "value": "USER"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Public and identity",
+      "item": [
+        {
+          "name": "Public health message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Admin roles",
+      "item": [
+        {
+          "name": "List application roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Assign role to user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles/{{roleName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleName}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove role from user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles/{{roleName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleName}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Email",
+      "item": [
+        {
+          "name": "Send plain-text email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [\"recipient@example.com\"],\r\n  \"cc\": [],\r\n  \"bcc\": [],\r\n  \"subject\": \"Qeema test email\",\r\n  \"body\": \"This is a plain-text email sent from Qeema.\",\r\n  \"templateName\": null,\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "emails",
+                "send"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send template email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [\"recipient@example.com\"],\r\n  \"cc\": [],\r\n  \"bcc\": [],\r\n  \"subject\": null,\r\n  \"body\": null,\r\n  \"templateName\": \"{{templateName}}\",\r\n  \"variables\": {\r\n    \"name\": \"Abdelrahman\",\r\n    \"email\": \"recipient@example.com\",\r\n    \"dashboardUrl\": \"https://example.com/dashboard\",\r\n    \"supportEmail\": \"support@example.com\"\r\n  }\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "emails",
+                "send"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Email templates",
+      "item": [
+        {
+          "name": "Create welcome template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('templateName', pm.response.json().name);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"welcome-email\",\r\n  \"subjectTemplate\": \"Welcome to Qeema, {{name}}!\",\r\n  \"htmlContent\": \"<html><body><h1>Welcome, {{name}}!</h1><p>Your email is {{email}}.</p><p><a href=\\\"{{dashboardUrl}}\\\">Open dashboard</a></p></body></html>\",\r\n  \"enabled\": true\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List email templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get email template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates",
+                "{{templateName}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preview email template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"templateName\": \"{{templateName}}\",\r\n  \"variables\": {\r\n    \"name\": \"Abdelrahman\",\r\n    \"email\": \"recipient@example.com\",\r\n    \"dashboardUrl\": \"https://example.com/dashboard\",\r\n    \"supportEmail\": \"support@example.com\"\r\n  }\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates",
+                "preview"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update email template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"{{templateName}}\",\r\n  \"subjectTemplate\": \"Welcome back, {{name}}!\",\r\n  \"htmlContent\": \"<html><body><h1>Welcome back, {{name}}!</h1></body></html>\",\r\n  \"enabled\": true\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates",
+                "{{templateName}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete email template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "email-templates",
+                "{{templateName}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Documents",
+      "item": [
+        {
+          "name": "Upload document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('documentId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Mentor demo document",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Document uploaded during the DMS demonstration.",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List accessible documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download current document version",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}",
+                "download"
+              ]
+            }
+          }
+        },
+        {
+          "name": "View document versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/versions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}",
+                "versions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload new document version",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/versions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}",
+                "versions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Soft-delete document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - API documentation",
+      "item": [
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v3/api-docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v3",
+                "api-docs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/swagger-ui.html",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "swagger-ui.html"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

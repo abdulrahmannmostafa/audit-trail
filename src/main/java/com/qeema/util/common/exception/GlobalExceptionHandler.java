@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -90,6 +91,29 @@ public class GlobalExceptionHandler {
                 return response(
                                 HttpStatus.UNAUTHORIZED,
                                 "The access token is missing required identity claims",
+                                request,
+                                Map.of());
+        }
+
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ApiError> handleAccessDenied(
+                AccessDeniedException exception,
+                WebRequest request) {
+            return response(
+                                HttpStatus.FORBIDDEN,
+                                "You are not authorized to access this resource",
+                                request,
+                                Map.of());
+        }
+
+        @ExceptionHandler(DocumentStorageException.class)
+        public ResponseEntity<ApiError> handleDocumentStorage(
+                DocumentStorageException exception,
+                WebRequest request) {
+            logger.error("Document storage operation failed", exception);
+            return response(
+                                HttpStatus.BAD_GATEWAY,
+                                "Document storage is currently unavailable",
                                 request,
                                 Map.of());
         }

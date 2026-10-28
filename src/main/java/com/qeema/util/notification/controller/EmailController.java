@@ -7,13 +7,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 import com.qeema.util.notification.dto.SendEmailRequest;
 import com.qeema.util.notification.dto.SendEmailResponse;
 import com.qeema.util.notification.service.EmailService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
@@ -30,7 +29,7 @@ public class EmailController {
     @PostMapping("/send")
     @Operation(
             summary = "Send an email",
-            description = "Sends a plain-text email or renders an enabled email template.")
+            description = "Sends a plain-text email or renders an enabled email template")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public SendEmailResponse sendEmail(
             @Valid @RequestBody SendEmailRequest request) {

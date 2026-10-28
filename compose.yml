@@ -1,0 +1,16 @@
+services:
+  silo:
+    image: pgsty/silo:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${SILO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${SILO_ROOT_PASSWORD}
+    ports:
+      - "9100:9000"
+      - "9101:9001"
+    volumes:
+      - silo_data:/data
+    restart: unless-stopped
+
+volumes:
+  silo_data:
