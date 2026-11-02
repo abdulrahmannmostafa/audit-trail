@@ -13,59 +13,113 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MAVEN_ARGS: --batch-mode --no-transfer-progress
+
 jobs:
-  verify:
-    name: Build and test
+  backend:
+    name: Backend / Java 25
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Check out source
         uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: "25"
           cache: maven
 
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
-      - name: Verify with Maven
-        run: ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Validate Maven project
+        run: ./mvnw $MAVEN_ARGS validate
+
+      - name: Run backend verification
+        run: ./mvnw $MAVEN_ARGS verify
         env:
-          DB_URL: jdbc:mysql://localhost:3306/util
-          DB_USERNAME: root
-          DB_PASSWORD: bedo
+          DB_URL: jdbc:mysql://localhost:3306/ci
+          DB_USERNAME: ci
+          DB_PASSWORD: ci
           MAIL_HOST: localhost
           MAIL_PORT: 2525
           MAIL_USERNAME: ci
           MAIL_PASSWORD: ci
           MAIL_FROM: no-reply@example.com
 
-      - name: Upload test reports
+      - name: Upload backend test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports
+          name: backend-test-reports
           path: |
             target/surefire-reports/**
             target/failsafe-reports/**
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Upload packaged application
+      - name: Upload backend package
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: qeema-util
+          name: backend-package
           path: target/*.jar
           if-no-files-found: error
           retention-days: 14
+
+  frontend:
+    name: Frontend / Node 22
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Upload frontend bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 14
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
