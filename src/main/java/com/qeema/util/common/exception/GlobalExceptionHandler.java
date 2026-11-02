@@ -17,6 +17,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.qeema.util.common.api.ApiError;
+import com.qeema.util.audit.service.AuditService;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -24,6 +25,11 @@ import jakarta.validation.ConstraintViolationException;
 public class GlobalExceptionHandler {
 
         private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        private final AuditService auditService;
+
+        public GlobalExceptionHandler(AuditService auditService) {
+                this.auditService = auditService;
+        }
 
         @ExceptionHandler(MethodArgumentNotValidException.class)
         public ResponseEntity<ApiError> handleMethodArgumentNotValid(
@@ -35,11 +41,12 @@ public class GlobalExceptionHandler {
                                                 error.getField(),
                                                 error.getDefaultMessage()));
 
-                return response(
+                return auditedResponse(
                                 HttpStatus.BAD_REQUEST,
                                 "Validation failed",
                                 request,
-                                fieldErrors);
+                                fieldErrors,
+                                exception);
         }
 
         @ExceptionHandler(ConstraintViolationException.class)
@@ -52,11 +59,12 @@ public class GlobalExceptionHandler {
                                                 violation.getPropertyPath().toString(),
                                                 violation.getMessage()));
 
-                return response(
+                return auditedResponse(
                                 HttpStatus.BAD_REQUEST,
                                 "Validation failed",
                                 request,
-                                fieldErrors);
+                                fieldErrors,
+                                exception);
         }
 
         @ExceptionHandler({
@@ -66,44 +74,48 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ApiError> handleMalformedRequest(
                         Exception exception,
                         WebRequest request) {
-                return response(
+                return auditedResponse(
                                 HttpStatus.BAD_REQUEST,
                                 "Malformed request",
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ApiError> handleNotFound(
                         ResourceNotFoundException exception,
                         WebRequest request) {
-                return response(
+                return auditedResponse(
                                 HttpStatus.NOT_FOUND,
                                 exception.getMessage(),
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(InvalidIdentityTokenException.class)
         public ResponseEntity<ApiError> handleInvalidIdentityToken(
                         InvalidIdentityTokenException exception,
                         WebRequest request) {
-                return response(
+                return auditedResponse(
                                 HttpStatus.UNAUTHORIZED,
                                 "The access token is missing required identity claims",
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(AccessDeniedException.class)
         public ResponseEntity<ApiError> handleAccessDenied(
                 AccessDeniedException exception,
                 WebRequest request) {
-            return response(
+            return auditedResponse(
                                 HttpStatus.FORBIDDEN,
                                 "You are not authorized to access this resource",
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(DocumentStorageException.class)
@@ -111,20 +123,34 @@ public class GlobalExceptionHandler {
                 DocumentStorageException exception,
                 WebRequest request) {
             logger.error("Document storage operation failed", exception);
-            return response(
+            return auditedResponse(
                                 HttpStatus.BAD_GATEWAY,
                                 "Document storage is currently unavailable",
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(EmailSendingException.class)
         public ResponseEntity<ApiError> handleEmailSending(
                 EmailSendingException exception,
                 WebRequest request) {
-            return response(
+            return auditedResponse(
                                 HttpStatus.BAD_GATEWAY,
                                 "The email provider could not accept the message",
+                                request,
+                                Map.of(),
+                                exception);
+        }
+
+        @ExceptionHandler(AuditPublishingException.class)
+        public ResponseEntity<ApiError> handleAuditPublishing(
+                        AuditPublishingException exception,
+                        WebRequest request) {
+                logger.error("Audit event could not be published", exception);
+                return response(
+                                HttpStatus.SERVICE_UNAVAILABLE,
+                                "The audit service is temporarily unavailable",
                                 request,
                                 Map.of());
         }
@@ -133,11 +159,12 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ApiError> handleIllegalArgument(
                         IllegalArgumentException exception,
                         WebRequest request) {
-                return response(
+                return auditedResponse(
                                 HttpStatus.BAD_REQUEST,
                                 exception.getMessage(),
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
         }
 
         @ExceptionHandler(Exception.class)
@@ -145,11 +172,25 @@ public class GlobalExceptionHandler {
                         Exception exception,
                         WebRequest request) {
                 logger.error("Unhandled exception while processing request", exception);
-                return response(
+                return auditedResponse(
                                 HttpStatus.INTERNAL_SERVER_ERROR,
                                 "An unexpected error occurred",
                                 request,
-                                Map.of());
+                                Map.of(),
+                                exception);
+        }
+
+        private ResponseEntity<ApiError> auditedResponse(
+                        HttpStatus status,
+                        String message,
+                        WebRequest request,
+                        Map<String, String> fieldErrors,
+                        Exception exception) {
+                auditService.recordRequestFailure(
+                                request,
+                                status.value(),
+                                exception.getClass().getSimpleName());
+                return response(status, message, request, fieldErrors);
         }
 
         private ResponseEntity<ApiError> response(

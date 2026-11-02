@@ -63,13 +63,23 @@ public class DocumentController {
     public ResponseEntity<InputStreamResource> download(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt) {
+
         DocumentDownload download = documentService.download(id, jwt);
+
         HttpHeaders headers = new HttpHeaders();
+
+        // Set the Content-Disposition header to indicate that the response is an
+        // attachment with the specified filename
         headers.setContentDisposition(ContentDisposition.attachment()
                 .filename(download.filename())
                 .build());
+
+        // Set the Content-Type and Content-Length headers based on the document's
+        // properties
         headers.setContentType(MediaType.parseMediaType(download.contentType()));
+
         headers.setContentLength(download.sizeBytes());
+
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(new InputStreamResource(download.content()));

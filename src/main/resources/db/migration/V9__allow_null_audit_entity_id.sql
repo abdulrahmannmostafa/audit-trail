@@ -1,0 +1,2 @@
+ALTER TABLE audit_log
+    MODIFY COLUMN entity_id VARCHAR(100) NULL;

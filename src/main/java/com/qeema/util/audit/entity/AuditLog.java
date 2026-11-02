@@ -1,54 +1,66 @@
 package com.qeema.util.audit.entity;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.qeema.util.audit.messaging.AuditEvent;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
 
 @Entity
 @Table(name = "audit_log")
 public class AuditLog {
 
     @Id
-    @Column(name = "id", length = 36, nullable = false)
+    @Column(length = 36, nullable = false)
     private String id;
 
     @Column(name = "event_id", length = 36, nullable = false, unique = true)
     private String eventId;
 
-    @Column(name = "actor_user_id", length = 36)
-    private String actorUserId;
+    @Column(name = "occurred_at", nullable = false)
+    private Instant occurredAt;
 
-    @Column(name = "action", length = 100, nullable = false)
+    @Column(name = "actor_id", nullable = false, length = 100)
+    private String actorId;
+
+    @Column(name = "actor_username", length = 255)
+    private String actorUsername;
+
+    @Column(nullable = false, length = 100)
     private String action;
 
-    @Column(name = "entity_type", length = 100, nullable = false)
+    @Column(name = "entity_type", nullable = false, length = 100)
     private String entityType;
 
-    @Column(name = "entity_id", length = 100, nullable = false)
+    @Column(name = "entity_id", length = 100)
     private String entityId;
 
+    @Column(nullable = false, length = 20)
+    private String outcome;
+
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "old_values")
+    @Column(name = "old_values", columnDefinition = "json")
     private Map<String, Object> oldValues;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "new_values")
+    @Column(name = "new_values", columnDefinition = "json")
     private Map<String, Object> newValues;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "metadata")
+    @Column(columnDefinition = "json")
     private Map<String, Object> metadata;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private Instant createdAt;
+    @Column(name = "consumed_at", nullable = false, insertable = false, updatable = false)
+    private Instant consumedAt;
 
     @PrePersist
     void assignId() {
@@ -57,79 +69,76 @@ public class AuditLog {
         }
     }
 
-    public String getId() {
-        return id;
+    protected AuditLog() {
     }
 
-    public void setId(String id) {
-        this.id = id;
+    private AuditLog(AuditEvent event) {
+        eventId = event.eventId().toString();
+        occurredAt = event.occurredAt();
+        actorId = event.actorId();
+        actorUsername = event.actorUsername();
+        action = event.action();
+        entityType = event.entityType();
+        entityId = event.entityId();
+        outcome = event.outcome();
+        oldValues = event.oldValues();
+        newValues = event.newValues();
+        metadata = event.metadata();
+    }
+
+    public static AuditLog from(AuditEvent event) {
+        return new AuditLog(event);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getEventId() {
         return eventId;
     }
 
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
+    public Instant getOccurredAt() {
+        return occurredAt;
     }
 
-    public String getActorUserId() {
-        return actorUserId;
+    public String getActorId() {
+        return actorId;
     }
 
-    public void setActorUserId(String actorUserId) {
-        this.actorUserId = actorUserId;
+    public String getActorUsername() {
+        return actorUsername;
     }
 
     public String getAction() {
         return action;
     }
 
-    public void setAction(String action) {
-        this.action = action;
-    }
-
     public String getEntityType() {
         return entityType;
-    }
-
-    public void setEntityType(String entityType) {
-        this.entityType = entityType;
     }
 
     public String getEntityId() {
         return entityId;
     }
 
-    public void setEntityId(String entityId) {
-        this.entityId = entityId;
+    public String getOutcome() {
+        return outcome;
     }
 
     public Map<String, Object> getOldValues() {
         return oldValues;
     }
 
-    public void setOldValues(Map<String, Object> oldValues) {
-        this.oldValues = oldValues;
-    }
-
     public Map<String, Object> getNewValues() {
         return newValues;
-    }
-
-    public void setNewValues(Map<String, Object> newValues) {
-        this.newValues = newValues;
     }
 
     public Map<String, Object> getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(Map<String, Object> metadata) {
-        this.metadata = metadata;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
+    public Instant getConsumedAt() {
+        return consumedAt;
     }
 }

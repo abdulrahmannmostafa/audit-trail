@@ -44,7 +44,7 @@ public class KeycloakRoleConverter
             throw new OAuth2AuthenticationException(
                     new OAuth2Error(
                             "invalid_token",
-                            "The access token is missing required identity claims.",
+                            "The access token is missing required identity claims",
                             null),
                     exception);
         }
@@ -54,7 +54,7 @@ public class KeycloakRoleConverter
             throw new OAuth2AuthenticationException(
                     new OAuth2Error(
                             "invalid_token",
-                            "This application account is disabled.",
+                            "This application account is disabled",
                             null));
         }
 

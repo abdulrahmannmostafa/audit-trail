@@ -8,16 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserIdentityRepository
-        extends JpaRepository<UserIdentity, String> {
+                extends JpaRepository<UserIdentity, String> {
 
-    @Query("""
-            SELECT i
-            FROM UserIdentity i
-            JOIN FETCH i.user
-            WHERE i.issuer = :issuer
-              AND i.subject = :subject
-            """)
-    Optional<UserIdentity> findByIssuerAndSubjectWithUser(
-            @Param("issuer") String issuer,
-            @Param("subject") String subject);
+        @Query("""
+                        SELECT i
+                        FROM UserIdentity i
+                        JOIN FETCH i.user
+                        WHERE i.issuer = :issuer
+                          AND i.subject = :subject
+                        """)
+        Optional<UserIdentity> findByIssuerAndSubjectWithUser(
+                        @Param("issuer") String issuer,
+                        @Param("subject") String subject);
 }

@@ -3,6 +3,7 @@ package com.qeema.util.identity.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.qeema.util.identity.dto.RoleResponse;
@@ -20,30 +21,33 @@ public class AdminRoleController {
     }
 
     @GetMapping("/roles")
-    public List<RoleResponse> getRoles() {
-        return userRoleService.getRoles();
+    public List<RoleResponse> getRoles(Authentication authentication) {
+        return userRoleService.getRoles(authentication);
     }
 
     @GetMapping("/users/{userId}/roles")
     public List<String> getUserRoles(
-            @PathVariable String userId) {
-        return userRoleService.getRoleNames(userId);
+            @PathVariable String userId,
+            Authentication authentication) {
+        return userRoleService.getRoleNames(userId, authentication);
     }
 
     @PostMapping("/users/{userId}/roles/{roleName}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void assignRole(
             @PathVariable String userId,
-            @PathVariable String roleName) {
-        userRoleService.assignRole(userId, roleName);
+            @PathVariable String roleName,
+            Authentication authentication) {
+        userRoleService.assignRole(userId, roleName, authentication);
     }
 
     @DeleteMapping("/users/{userId}/roles/{roleName}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeRole(
             @PathVariable String userId,
-            @PathVariable String roleName) {
-        userRoleService.removeRole(userId, roleName);
+            @PathVariable String roleName,
+            Authentication authentication) {
+        userRoleService.removeRole(userId, roleName, authentication);
     }
 
 }
