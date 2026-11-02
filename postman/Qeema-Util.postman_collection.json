@@ -29,6 +29,10 @@
     {
       "key": "roleName",
       "value": "USER"
+    },
+    {
+      "key": "eventId",
+      "value": ""
     }
   ],
   "auth": {
@@ -55,13 +59,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/public",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "public"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public"]
             }
           }
         },
@@ -72,13 +71,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me"]
             }
           }
         }
@@ -94,14 +88,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/roles",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "roles"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "roles"]
             }
           }
         },
@@ -112,16 +100,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "users",
-                "{{userId}}",
-                "roles"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", "{{userId}}", "roles"]
             }
           }
         },
@@ -132,9 +112,7 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles/{{roleName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "api",
                 "admin",
@@ -153,9 +131,7 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/users/{{userId}}/roles/{{roleName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "api",
                 "admin",
@@ -188,15 +164,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/emails/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "emails",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
             }
           }
         },
@@ -216,15 +185,50 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/emails/send",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "emails",
-                "send"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
+            }
+          }
+        },
+        {
+          "name": "Send email with CC and BCC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [\"recipient@example.com\"],\r\n  \"cc\": [\"copy@example.com\"],\r\n  \"bcc\": [\"blind-copy@example.com\"],\r\n  \"subject\": \"Qeema notification\",\r\n  \"body\": \"This message demonstrates CC and BCC recipients.\",\r\n  \"templateName\": null,\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
+            }
+          }
+        },
+        {
+          "name": "Send template email with empty optional fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [\"recipient@example.com\"],\r\n  \"cc\": null,\r\n  \"bcc\": null,\r\n  \"subject\": null,\r\n  \"body\": null,\r\n  \"templateName\": \"{{templateName}}\",\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
             }
           }
         }
@@ -261,14 +265,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates"]
             }
           }
         },
@@ -279,14 +277,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates"]
             }
           }
         },
@@ -297,15 +289,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates",
-                "{{templateName}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "{{templateName}}"]
             }
           }
         },
@@ -325,15 +310,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates/preview",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates",
-                "preview"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "preview"]
             }
           }
         },
@@ -353,15 +331,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates",
-                "{{templateName}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "{{templateName}}"]
             }
           }
         },
@@ -372,15 +343,71 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "admin",
-                "email-templates",
-                "{{templateName}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "{{templateName}}"]
+            }
+          }
+        },
+        {
+          "name": "Create disabled template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"disabled-demo-template\",\r\n  \"subjectTemplate\": \"Disabled template test\",\r\n  \"htmlContent\": \"<html><body><p>This template is disabled.</p></body></html>\",\r\n  \"enabled\": false\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates"]
+            }
+          }
+        },
+        {
+          "name": "Preview template with empty variables",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"templateName\": \"{{templateName}}\",\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/preview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Update template and disable it",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"{{templateName}}\",\r\n  \"subjectTemplate\": \"Disabled: {{name}}\",\r\n  \"htmlContent\": \"<html><body><p>This template is now disabled.</p></body></html>\",\r\n  \"enabled\": false\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/{{templateName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "{{templateName}}"]
             }
           }
         }
@@ -428,13 +455,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/documents",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
             }
           }
         },
@@ -445,13 +467,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/documents",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
             }
           }
         },
@@ -462,15 +479,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/documents/{{documentId}}/download",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{documentId}}",
-                "download"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "download"]
             }
           }
         },
@@ -481,15 +491,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/documents/{{documentId}}/versions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{documentId}}",
-                "versions"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "versions"]
             }
           }
         },
@@ -510,15 +513,40 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/documents/{{documentId}}/versions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{documentId}}",
-                "versions"
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "versions"]
+            }
+          }
+        },
+        {
+          "name": "Upload document without description",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Document without description",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
               ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
             }
           }
         },
@@ -529,21 +557,277 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/documents/{{documentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "documents",
-                "{{documentId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
             }
           }
         }
       ]
     },
     {
-      "name": "06 - API documentation",
+      "name": "06 - Audit logs",
+      "item": [
+        {
+          "name": "Search audit logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const events = pm.response.json().content || [];",
+                  "    if (events.length > 0 && events[0].eventId) {",
+                  "        pm.collectionVariables.set('eventId', events[0].eventId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit-logs?page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "audit-logs"],
+              "query": [
+                {
+                  "key": "actorId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entityType",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entityId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search successful document events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit-logs?action=DOCUMENT_UPLOADED&entityType=DOCUMENT&page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "audit-logs"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "DOCUMENT_UPLOADED"
+                },
+                {
+                  "key": "entityType",
+                  "value": "DOCUMENT"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get audit event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit-logs/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "audit-logs", "{{eventId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Validation and error examples",
+      "item": [
+        {
+          "name": "Invalid plain email - missing subject and body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [\"recipient@example.com\"],\r\n  \"cc\": [],\r\n  \"bcc\": [],\r\n  \"subject\": null,\r\n  \"body\": null,\r\n  \"templateName\": null,\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
+            }
+          }
+        },
+        {
+          "name": "Invalid email - empty recipients",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"to\": [],\r\n  \"cc\": [],\r\n  \"bcc\": [],\r\n  \"subject\": \"Invalid recipient test\",\r\n  \"body\": \"This should fail validation\",\r\n  \"templateName\": null,\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/emails/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "emails", "send"]
+            }
+          }
+        },
+        {
+          "name": "Invalid template - blank required fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"\",\r\n  \"subjectTemplate\": \"\",\r\n  \"htmlContent\": \"\",\r\n  \"enabled\": true\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates"]
+            }
+          }
+        },
+        {
+          "name": "Invalid template preview - blank name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"templateName\": \"\",\r\n  \"variables\": {}\r\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/email-templates/preview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "email-templates", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Invalid document upload - blank title",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "This request should fail title validation.",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            }
+          }
+        },
+        {
+          "name": "Invalid document upload - missing file",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Missing file test",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "This request should fail file validation.",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - API documentation",
       "item": [
         {
           "name": "OpenAPI JSON",
@@ -555,13 +839,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/v3/api-docs",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "v3",
-                "api-docs"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["v3", "api-docs"]
             }
           }
         },
@@ -575,12 +854,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/swagger-ui.html",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "swagger-ui.html"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["swagger-ui.html"]
             }
           }
         }

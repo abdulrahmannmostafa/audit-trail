@@ -12,11 +12,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.qeema.util.common.exception.DocumentStorageException;
+import com.qeema.util.audit.service.AuditService;
 import org.springframework.security.access.AccessDeniedException;
 import com.qeema.util.common.exception.ResourceNotFoundException;
 import com.qeema.util.document.dto.DocumentDownload;
@@ -37,12 +39,31 @@ import com.qeema.util.storage.service.ObjectStorageService;
 @Service
 public class DocumentService {
 
+        private static final String DOCUMENT_TYPE_NAME = "DOCUMENT";
+
+        private static final String DOCUMENT_DELETED = "DOCUMENT_DELETED";
+        private static final String DOCUMENTS_LISTED = "DOCUMENTS_LISTED";
+        private static final String DOCUMENT_UPLOADED = "DOCUMENT_UPLOADED";
+        private static final String DOCUMENT_DOWNLOADED = "DOCUMENT_DOWNLOADED";
+        private static final String DOCUMENT_VERSION_CREATED = "DOCUMENT_VERSION_CREATED";
+        private static final String DOCUMENT_VERSIONS_VIEWED = "DOCUMENT_VERSIONS_VIEWED";
+
+        private static final String DOCUMENT_SUCCESS = "SUCCESS";
+
+        private static final String DOCUMENT_ENTITY_ID = "DOCUMENT";
+
+        private static final String DOCUMENT_UPLOAD_ACTION = "UPLOAD";
+        private static final String DOCUMENT_DOWNLOAD_ACTION = "DOWNLOAD";
+        private static final String DOCUMENT_EDIT_ACTION = "EDIT";
+        private static final String DOCUMENT_DELETE_ACTION = "DELETE";
+
         private final DocumentRepository documentRepository;
         private final DocumentVersionRepository versionRepository;
         private final DocumentAuditLogRepository auditRepository;
         private final DocumentPermissionRepository permissionRepository;
         private final UserIdentityRepository identityRepository;
         private final ObjectStorageService storage;
+        private final AuditService auditService;
 
         public DocumentService(
                         DocumentRepository documentRepository,
@@ -50,13 +71,15 @@ public class DocumentService {
                         DocumentAuditLogRepository auditRepository,
                         DocumentPermissionRepository permissionRepository,
                         UserIdentityRepository identityRepository,
-                        ObjectStorageService storage) {
+                        ObjectStorageService storage,
+                        AuditService auditService) {
                 this.documentRepository = documentRepository;
                 this.versionRepository = versionRepository;
                 this.auditRepository = auditRepository;
                 this.permissionRepository = permissionRepository;
                 this.identityRepository = identityRepository;
                 this.storage = storage;
+                this.auditService = auditService;
         }
 
         @Transactional
@@ -72,29 +95,53 @@ public class DocumentService {
                                 actorId));
 
                 addVersion(document, file, actorId);
-                audit(document, null, actorId, "UPLOAD",
+                auditService.record(
+                                new JwtAuthenticationToken(jwt),
+                                DOCUMENT_UPLOADED,
+                                DOCUMENT_TYPE_NAME,
+                                document.getId(),
+                                DOCUMENT_SUCCESS,
+                                Map.of(),
+                                Map.of("filename", safeFilename(file), "sizeBytes", file.getSize()),
+                                Map.of("filename", safeFilename(file)));
+                audit(document, null, actorId, DOCUMENT_UPLOAD_ACTION,
                                 Map.of("filename", safeFilename(file)));
                 return toResponse(document);
         }
 
         @Transactional(readOnly = true)
         public List<DocumentResponse> list(Jwt jwt) {
-                return documentRepository.findAccessible(actorId(jwt)).stream()
+                List<DocumentResponse> documents = documentRepository.findAccessible(actorId(jwt)).stream()
                                 .map(this::toResponse)
                                 .toList();
+                auditService.record(new JwtAuthenticationToken(jwt),
+                                DOCUMENTS_LISTED, DOCUMENT_TYPE_NAME, DOCUMENT_ENTITY_ID,
+                                DOCUMENT_SUCCESS, Map.of(), Map.of("count", documents.size()),
+                                Map.of("count", documents.size()));
+                return documents;
         }
 
         @Transactional
         public DocumentDownload download(String id, Jwt jwt) {
                 Document document = accessibleDocument(id, jwt);
                 DocumentVersion version = currentVersion(document);
-                audit(document, version, actorId(jwt), "DOWNLOAD", Map.of());
                 try {
-                        return new DocumentDownload(
+                        DocumentDownload download = new DocumentDownload(
                                         storage.download(version.getStorageKey()),
                                         version.getOriginalFilename(),
                                         version.getContentType(),
                                         version.getSizeBytes());
+                        audit(document, version, actorId(jwt), DOCUMENT_DOWNLOAD_ACTION, Map.of());
+                        auditService.record(
+                                        new JwtAuthenticationToken(jwt),
+                                        DOCUMENT_DOWNLOADED,
+                                        DOCUMENT_TYPE_NAME,
+                                        document.getId(),
+                                        DOCUMENT_SUCCESS,
+                                        Map.of(),
+                                        Map.of("version", version.getVersionNumber()),
+                                        Map.of("version", version.getVersionNumber()));
+                        return download;
                 } catch (RuntimeException exception) {
                         throw new DocumentStorageException(
                                         "Unable to download document content", exception);
@@ -104,11 +151,18 @@ public class DocumentService {
         @Transactional(readOnly = true)
         public List<DocumentVersionResponse> versions(String id, Jwt jwt) {
                 Document document = accessibleDocument(id, jwt);
-                return versionRepository
+                List<DocumentVersionResponse> versions = versionRepository
                                 .findByDocumentIdOrderByVersionNumberDesc(document.getId())
                                 .stream()
                                 .map(this::toVersionResponse)
                                 .toList();
+                auditService.record(new JwtAuthenticationToken(jwt),
+                                DOCUMENT_VERSIONS_VIEWED, DOCUMENT_TYPE_NAME,
+                                document.getId(), DOCUMENT_SUCCESS,
+                                Map.of(),
+                                Map.of("count", versions.size()),
+                                Map.of("count", versions.size()));
+                return versions;
         }
 
         @Transactional
@@ -116,18 +170,32 @@ public class DocumentService {
                         String id,
                         MultipartFile file,
                         Jwt jwt) {
+
+                final String USER_SUBJECT = "USER";
+                final String EDIT_PERMISSION = "EDIT";
+
                 validateFile(file);
                 Document document = accessibleDocument(id, jwt);
                 String actorId = actorId(jwt);
                 if (!document.getOwnerId().equals(actorId)
                                 && !permissionRepository
                                                 .existsByDocumentIdAndSubjectTypeAndSubjectIdAndPermission(
-                                                                document.getId(), "USER", actorId, "EDIT")) {
+                                                                document.getId(), USER_SUBJECT, actorId,
+                                                                EDIT_PERMISSION)) {
                         throw new AccessDeniedException(
                                         "You do not have permission to edit this document");
                 }
                 DocumentVersion version = addVersion(document, file, actorId);
-                audit(document, version, actorId, "EDIT",
+                auditService.record(
+                                new JwtAuthenticationToken(jwt),
+                                DOCUMENT_VERSION_CREATED,
+                                DOCUMENT_TYPE_NAME,
+                                document.getId(),
+                                DOCUMENT_SUCCESS,
+                                Map.of(),
+                                Map.of("version", version.getVersionNumber()),
+                                Map.of("version", version.getVersionNumber()));
+                audit(document, version, actorId, DOCUMENT_EDIT_ACTION,
                                 Map.of("filename", safeFilename(file),
                                                 "version", version.getVersionNumber()));
                 return toVersionResponse(version);
@@ -143,20 +211,32 @@ public class DocumentService {
                 }
                 document.softDelete();
                 documentRepository.save(document);
-                audit(document, null, actorId, "DELETE", Map.of());
+                audit(document, null, actorId, DOCUMENT_DELETE_ACTION, Map.of());
+                auditService.record(
+                                new JwtAuthenticationToken(jwt),
+                                DOCUMENT_DELETED,
+                                DOCUMENT_TYPE_NAME,
+                                document.getId(),
+                                DOCUMENT_SUCCESS,
+                                Map.of("status", "ACTIVE"),
+                                Map.of("status", "DELETED"),
+                                Map.of());
         }
 
         private DocumentVersion addVersion(
                         Document document,
                         MultipartFile file,
                         String actorId) {
+                final String DOCUMENT_KEY_PREFIX = "documents/";
+                final String VERSION_KEY_PREFIX = "/versions/";
+
                 int nextVersion = versionRepository
                                 .findTopByDocumentIdOrderByVersionNumberDesc(document.getId())
                                 .map(version -> version.getVersionNumber() + 1)
                                 .orElse(1);
                 String versionId = UUID.randomUUID().toString();
-                String storageKey = "documents/" + document.getId()
-                                + "/versions/" + nextVersion + "/" + versionId;
+                String storageKey = DOCUMENT_KEY_PREFIX + document.getId()
+                                + VERSION_KEY_PREFIX + nextVersion + "/" + versionId;
                 String checksum;
 
                 try (InputStream input = file.getInputStream()) {
@@ -264,15 +344,19 @@ public class DocumentService {
         }
 
         private String safeFilename(MultipartFile file) {
+
+                final String DOCUMENT = "DOCUMENT";
                 String filename = file.getOriginalFilename();
                 if (filename == null || filename.isBlank())
-                        return "document";
+                        return DOCUMENT;
                 return Paths.get(filename).getFileName().toString();
         }
 
         private String contentType(MultipartFile file) {
+                final String CONTENT_TYPE = "application/octet-stream";
+
                 return file.getContentType() == null
-                                ? "application/octet-stream"
+                                ? CONTENT_TYPE
                                 : file.getContentType();
         }
 }

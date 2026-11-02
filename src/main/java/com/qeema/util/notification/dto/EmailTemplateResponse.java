@@ -1,8 +1,9 @@
 package com.qeema.util.notification.dto;
 
 public record EmailTemplateResponse(
-        String id,
-        String name,
-        String subjectTemplate,
-        boolean enabled) {
+                String id,
+                String name,
+                String subjectTemplate,
+                String htmlContent,
+                boolean enabled) {
 }

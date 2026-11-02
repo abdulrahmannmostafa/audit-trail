@@ -45,12 +45,14 @@ public class ObjectStorageService {
     }
 
     private void ensureBucket() {
+        final int ERROR_CODE = 404;
+
         try {
             s3Client.headBucket(HeadBucketRequest.builder()
                     .bucket(bucket)
                     .build());
         } catch (software.amazon.awssdk.services.s3.model.S3Exception exception) {
-            if (exception.statusCode() != 404) {
+            if (exception.statusCode() != ERROR_CODE) {
                 throw exception;
             }
             s3Client.createBucket(builder -> builder.bucket(bucket));

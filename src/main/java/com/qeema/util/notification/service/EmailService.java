@@ -11,9 +11,11 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.qeema.util.common.exception.EmailSendingException;
+import com.qeema.util.audit.service.AuditService;
 import com.qeema.util.notification.dto.SendEmailRequest;
 import com.qeema.util.notification.dto.SendEmailResponse;
 import com.qeema.util.notification.entity.EmailLog;
@@ -27,6 +29,14 @@ import jakarta.mail.internet.MimeMessage;
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+
+    private final String EMAIL_SENT_ACTION = "EMAIL_SENT";
+    private final String EMAIL_ENTITY_TYPE = "EMAIL";
+
+    private final String EMAIL_SUCCESS_ACTION = "SUCCESS";
+    private final String EMAIL_FAILURE_ACTION = "FAILURE";
+
+    private final String PENDING_STATUS = "PENDING";
     private final String SENT_STATUS = "SENT";
     private final String FAILED_STATUS = "FAILED";
 
@@ -35,21 +45,29 @@ public class EmailService {
     private final EmailTemplateService templateService;
     private final EmailTemplateRenderer renderer;
     private final String fromAddress;
+    private final AuditService auditService;
 
     public EmailService(
             JavaMailSender mailSender,
             EmailLogRepository logRepository,
             EmailTemplateService templateService,
             EmailTemplateRenderer renderer,
+            AuditService auditService,
             @Value("${app.mail.from:no-reply@example.com}") String fromAddress) {
         this.mailSender = mailSender;
         this.logRepository = logRepository;
         this.templateService = templateService;
         this.renderer = renderer;
+        this.auditService = auditService;
         this.fromAddress = fromAddress;
     }
 
-    public SendEmailResponse sendEmail(SendEmailRequest request) {
+    public SendEmailResponse sendEmail(
+            SendEmailRequest request,
+            Authentication authentication) {
+
+        final String PLAIN_TEXT_TEMPLATE = "plain-text";
+
         validate(request);
 
         // Resolve the template if provided
@@ -86,10 +104,37 @@ public class EmailService {
             log.setStatus(SENT_STATUS);
             log.setSentAt(Instant.now());
             logRepository.save(log);
+            auditService.record(
+                    authentication,
+                    EMAIL_SENT_ACTION,
+                    EMAIL_ENTITY_TYPE,
+                    log.getId(),
+                    EMAIL_SUCCESS_ACTION,
+                    Map.of("status", PENDING_STATUS),
+                    Map.of("status", SENT_STATUS),
+                    Map.of(
+                            "recipientCount", request.to().size(),
+                            "template", template == null
+                                    ? PLAIN_TEXT_TEMPLATE
+                                    : template.getName()));
 
             return new SendEmailResponse(log.getId(), SENT_STATUS, subject);
         } catch (MessagingException | MailException exception) {
             markFailed(log, exception);
+            try {
+                auditService.record(
+                        authentication,
+                        EMAIL_SENT_ACTION,
+                        EMAIL_ENTITY_TYPE,
+                        log.getId(),
+                        EMAIL_FAILURE_ACTION,
+                        Map.of("status", PENDING_STATUS),
+                        Map.of("status", FAILED_STATUS),
+                        Map.of("errorType", exception.getClass().getSimpleName()));
+            } catch (RuntimeException auditException) {
+                logger.warn("Unable to record failed email audit event {}",
+                        log.getId(), auditException);
+            }
             throw new EmailSendingException("Failed to send email", exception);
         }
     }
@@ -129,14 +174,18 @@ public class EmailService {
     }
 
     private void validate(SendEmailRequest request) {
+        final String TO_FIELD = "TO";
+        final String CC_FIELD = "CC";
+        final String BCC_FIELD = "BCC";
+
         if (request == null || request.to() == null || request.to().isEmpty()) {
             throw new IllegalArgumentException(
                     "At least one recipient is required");
         }
 
-        validateRecipients(request.to(), "TO");
-        validateOptionalRecipients(request.cc(), "CC");
-        validateOptionalRecipients(request.bcc(), "BCC");
+        validateRecipients(request.to(), TO_FIELD);
+        validateOptionalRecipients(request.cc(), CC_FIELD);
+        validateOptionalRecipients(request.bcc(), BCC_FIELD);
 
         boolean hasTemplate = request.templateName() != null
                 && !request.templateName().isBlank();

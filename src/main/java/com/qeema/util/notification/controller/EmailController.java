@@ -1,6 +1,7 @@
 package com.qeema.util.notification.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +28,11 @@ public class EmailController {
     }
 
     @PostMapping("/send")
-    @Operation(
-            summary = "Send an email",
-            description = "Sends a plain-text email or renders an enabled email template")
+    @Operation(summary = "Send an email", description = "Sends a plain-text email or renders an enabled email template")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public SendEmailResponse sendEmail(
-            @Valid @RequestBody SendEmailRequest request) {
-        return emailService.sendEmail(request);
+            @Valid @RequestBody SendEmailRequest request,
+            Authentication authentication) {
+        return emailService.sendEmail(request, authentication);
     }
 }

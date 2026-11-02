@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.qeema.util.notification.dto.EmailTemplateResponse;
 import com.qeema.util.notification.dto.EmailTemplateRequest;
@@ -36,43 +37,52 @@ public class EmailTemplateController {
 
     @GetMapping
     @Operation(summary = "List email templates")
-    public List<EmailTemplateResponse> getTemplates() {
-        return templateService.getTemplates();
+    public List<EmailTemplateResponse> getTemplates(
+            Authentication authentication) {
+        return templateService.getTemplates(authentication);
     }
 
     @PostMapping("/preview")
     @Operation(summary = "Preview an email template")
     public PreviewEmailResponse preview(
-            @Valid @RequestBody PreviewEmailRequest request) {
+            @Valid @RequestBody PreviewEmailRequest request,
+            Authentication authentication) {
         return templateService.preview(
                 request.templateName(),
-                request.variables());
+                request.variables(),
+                authentication);
     }
 
     @PostMapping
     @Operation(summary = "Create an email template")
     public EmailTemplateResponse createTemplate(
-            @Valid @RequestBody EmailTemplateRequest request) {
-        return templateService.create(request);
+            @Valid @RequestBody EmailTemplateRequest request,
+            Authentication authentication) {
+        return templateService.create(request, authentication);
     }
 
     @GetMapping("/{name}")
     @Operation(summary = "Get an email template")
-    public EmailTemplateResponse getTemplate(@PathVariable String name) {
-        return templateService.getTemplate(name);
+    public EmailTemplateResponse getTemplate(
+            @PathVariable String name,
+            Authentication authentication) {
+        return templateService.getTemplate(name, authentication);
     }
 
     @PutMapping("/{name}")
     @Operation(summary = "Update an email template")
     public EmailTemplateResponse updateTemplate(
             @PathVariable String name,
-            @Valid @RequestBody EmailTemplateRequest request) {
-        return templateService.update(name, request);
+            @Valid @RequestBody EmailTemplateRequest request,
+            Authentication authentication) {
+        return templateService.update(name, request, authentication);
     }
 
     @DeleteMapping("/{name}")
     @Operation(summary = "Delete an email template")
-    public void deleteTemplate(@PathVariable String name) {
-        templateService.delete(name);
+    public void deleteTemplate(
+            @PathVariable String name,
+            Authentication authentication) {
+        templateService.delete(name, authentication);
     }
 }
