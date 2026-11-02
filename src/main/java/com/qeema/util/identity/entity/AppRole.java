@@ -44,9 +44,6 @@ public class AppRole {
 
     @Override
     public String toString() {
-        return "AppRole{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                '}';
+        return "AppRole{" + "id=" + id + ", name='" + name + '\'' + '}';
     }
 }

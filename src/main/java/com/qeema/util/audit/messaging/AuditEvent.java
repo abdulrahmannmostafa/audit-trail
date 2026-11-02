@@ -4,29 +4,23 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-public record AuditEvent(
-        UUID eventId,
-        Instant occurredAt,
-        String actorId,
-        String actorUsername,
-        String action,
-        String entityType,
-        String entityId,
-        String outcome,
-        Map<String, Object> oldValues,
-        Map<String, Object> newValues,
-        Map<String, Object> metadata) {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    public AuditEvent {
-        if (eventId == null || occurredAt == null
-                || actorId == null || actorId.isBlank()
-                || action == null || action.isBlank()
-                || entityType == null || entityType.isBlank()
-                || outcome == null || outcome.isBlank()) {
-            throw new IllegalArgumentException("Audit event contains invalid required fields");
-        }
-        oldValues = oldValues == null ? Map.of() : Map.copyOf(oldValues);
-        newValues = newValues == null ? Map.of() : Map.copyOf(newValues);
-        metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
-    }
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuditEvent {
+    private UUID eventId;
+    private Instant occurredAt;
+    private String actorId;
+    private String actorUsername;
+    private String action;
+    private String entityType;
+    private String entityId;
+    private String outcome;
+    private Map<String, Object> oldValues;
+    private Map<String, Object> newValues;
+    private Map<String, Object> metadata;
 }

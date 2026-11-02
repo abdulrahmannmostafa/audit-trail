@@ -15,8 +15,7 @@ public class AdminRoleController {
 
     private final UserRoleService userRoleService;
 
-    public AdminRoleController(
-            UserRoleService userRoleService) {
+    public AdminRoleController(UserRoleService userRoleService) {
         this.userRoleService = userRoleService;
     }
 
@@ -26,27 +25,19 @@ public class AdminRoleController {
     }
 
     @GetMapping("/users/{userId}/roles")
-    public List<String> getUserRoles(
-            @PathVariable String userId,
-            Authentication authentication) {
+    public List<String> getUserRoles(@PathVariable String userId, Authentication authentication) {
         return userRoleService.getRoleNames(userId, authentication);
     }
 
     @PostMapping("/users/{userId}/roles/{roleName}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void assignRole(
-            @PathVariable String userId,
-            @PathVariable String roleName,
-            Authentication authentication) {
+    public void assignRole(@PathVariable String userId, @PathVariable String roleName, Authentication authentication) {
         userRoleService.assignRole(userId, roleName, authentication);
     }
 
     @DeleteMapping("/users/{userId}/roles/{roleName}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeRole(
-            @PathVariable String userId,
-            @PathVariable String roleName,
-            Authentication authentication) {
+    public void removeRole(@PathVariable String userId, @PathVariable String roleName, Authentication authentication) {
         userRoleService.removeRole(userId, roleName, authentication);
     }
 

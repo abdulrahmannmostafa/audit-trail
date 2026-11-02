@@ -7,22 +7,25 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import com.qeema.util.audit.entity.AuditLog;
 import com.qeema.util.audit.repository.AuditLogRepository;
+
+import static com.qeema.util.audit.repository.AuditLogSpecifications.*;
+
 import com.qeema.util.common.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 @Service
-public class AuditQueryService {
+@RequiredArgsConstructor
+public class AuditQueryService implements AuditQueryUseCase {
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String DEFAULT_SORT_FIELD = "occurredAt";
 
     private final AuditLogRepository repository;
-
-    public AuditQueryService(AuditLogRepository repository) {
-        this.repository = repository;
-    }
 
     // Search for audit logs based on the provided parameters and return a paginated
     // result
@@ -43,15 +46,31 @@ public class AuditQueryService {
         if (from != null && to != null && !from.isBefore(to)) {
             throw new IllegalArgumentException("'from' must be before 'to'");
         }
-        return repository.search(
-                normalize(actorId),
-                normalize(action),
-                normalize(entityType),
-                normalize(entityId),
-                from,
-                to,
+        return repository.findAll(actorIs(normalize(actorId))
+                        .and(actionIs(normalize(action)))
+                        .and(entityTypeIs(normalize(entityType)))
+                        .and(entityIdIs(normalize(entityId)))
+                        .and(occurredFrom(from))
+                        .and(occurredBefore(to)),
                 PageRequest.of(page, size,
                         Sort.by(Sort.Direction.DESC, DEFAULT_SORT_FIELD)));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> searchFor(
+            Authentication authentication,
+            String actorId,
+            String action,
+            String entityType,
+            String entityId,
+            Instant from,
+            Instant to,
+            int page,
+            int size) {
+        String effectiveActor = isAdmin(authentication)
+                ? actorId
+                : jwtSubject(authentication);
+        return search(effectiveActor, action, entityType, entityId, from, to, page, size);
     }
 
     // Get an audit log by its event ID
@@ -69,5 +88,17 @@ public class AuditQueryService {
     // blank
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+    }
+
+    private String jwtSubject(Authentication authentication) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+            return jwtAuthentication.getToken().getSubject();
+        }
+        return authentication == null ? null : authentication.getName();
     }
 }

@@ -1,4 +1,16 @@
 services:
+  mysql:
+    image: mysql:9.4
+    container_name: qeema-mysql
+    environment:
+      MYSQL_DATABASE: demo_db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-local-db-password}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
   silo:
     image: pgsty/silo:latest
     command: server /data --console-address ":9001"
@@ -33,5 +45,6 @@ services:
       - kafka_data:/var/lib/kafka/data
 
 volumes:
+  mysql_data:
   silo_data:
   kafka_data:

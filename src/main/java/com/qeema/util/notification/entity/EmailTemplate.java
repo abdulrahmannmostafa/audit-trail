@@ -105,14 +105,6 @@ public class EmailTemplate {
 
     @Override
     public String toString() {
-        return "EmailTemplate{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", subjectTemplate='" + subjectTemplate + '\'' +
-                ", htmlContent='" + htmlContent + '\'' +
-                ", enabled=" + enabled +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
+        return "EmailTemplate{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", subjectTemplate='" + subjectTemplate + '\'' + ", htmlContent='" + htmlContent + '\'' + ", enabled=" + enabled + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
     }
 }

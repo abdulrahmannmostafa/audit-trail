@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import com.qeema.util.common.exception.AuditPublishingException;
 
 @Component
-public class AuditEventProducer {
+public class AuditEventProducer implements AuditEventPublisher {
 
     public static final String TOPIC = "audit-events";
     private static final int TIMEOUT_SECONDS = 10;
@@ -32,21 +32,21 @@ public class AuditEventProducer {
 
             // Try to send the audit event to the Kafka topic and wait for the result with a
             // timeout of 10 seconds
-            logger.debug("Publishing audit event {} to topic {}", event.eventId(), TOPIC);
-            kafkaTemplate.send(TOPIC, event.actorId(), event)
+            logger.debug("Publishing audit event {} to topic {}", event.getEventId(), TOPIC);
+            kafkaTemplate.send(TOPIC, event.getActorId(), event)
                     .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         } catch (InterruptedException exception) {
             // Restore the interrupted status of the thread and throw a custom exception
             // If i don't interrupted, the current thread may not respond to future
             // interrupts which can lead to unexpected behavior
-            logger.error("Audit event publishing was interrupted for event {}", event.eventId(), exception);
+            logger.error("Audit event publishing was interrupted for event {}", event.getEventId(), exception);
             Thread.currentThread().interrupt();
 
             throw new AuditPublishingException(
                     "Audit event publishing was interrupted", exception);
         } catch (TimeoutException | ExecutionException exception) {
-            logger.error("Failed to publish audit event {}", event.eventId(), exception);
+            logger.error("Failed to publish audit event {}", event.getEventId(), exception);
 
             throw new AuditPublishingException(
                     "Audit event could not be published", exception);

@@ -41,10 +41,8 @@ public class UserRoleId implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof UserRoleId that))
-            return false;
+        if (this == o) return true;
+        if (!(o instanceof UserRoleId that)) return false;
         return Objects.equals(userId, that.userId) && Objects.equals(roleId, that.roleId);
     }
 
@@ -55,9 +53,6 @@ public class UserRoleId implements Serializable {
 
     @Override
     public String toString() {
-        return "UserRoleId{" +
-                "userId='" + userId + '\'' +
-                ", roleId=" + roleId +
-                '}';
+        return "UserRoleId{" + "userId='" + userId + '\'' + ", roleId=" + roleId + '}';
     }
 }

@@ -1,6 +1,13 @@
 package com.qeema.util.identity.dto;
 
-public record RoleResponse(
-                Integer id,
-                String name) {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RoleResponse {
+    private Integer id;
+    private String name;
 }

@@ -2,15 +2,22 @@ package com.qeema.util.document.dto;
 
 import java.time.Instant;
 
-public record DocumentResponse(
-        String id,
-        String title,
-        String description,
-        String ownerId,
-        String currentVersionId,
-        String filename,
-        String contentType,
-        long sizeBytes,
-        Instant createdAt,
-        Instant updatedAt) {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DocumentResponse {
+    private String id;
+    private String title;
+    private String description;
+    private String ownerId;
+    private String currentVersionId;
+    private String filename;
+    private String contentType;
+    private long sizeBytes;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

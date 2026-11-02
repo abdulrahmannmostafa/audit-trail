@@ -154,8 +154,7 @@ public class EmailLog {
     public EmailLog() {
     }
 
-    public EmailLog(EmailTemplate template, List<String> recipientTo, List<String> recipientCc,
-            List<String> recipientBcc, String subject) {
+    public EmailLog(EmailTemplate template, List<String> recipientTo, List<String> recipientCc, List<String> recipientBcc, String subject) {
         this.template = template;
         this.recipientTo = recipientTo;
         this.recipientCc = recipientCc;
@@ -165,17 +164,6 @@ public class EmailLog {
 
     @Override
     public String toString() {
-        return "EmailLog{" +
-                "id='" + id + '\'' +
-                ", template=" + (template != null ? template.getId() : null) +
-                ", recipientTo=" + recipientTo +
-                ", recipientCc=" + recipientCc +
-                ", recipientBcc=" + recipientBcc +
-                ", subject='" + subject + '\'' +
-                ", status='" + status + '\'' +
-                ", errorMessage='" + errorMessage + '\'' +
-                ", createdAt=" + createdAt +
-                ", sentAt=" + sentAt +
-                '}';
+        return "EmailLog{" + "id='" + id + '\'' + ", template=" + (template != null ? template.getId() : null) + ", recipientTo=" + recipientTo + ", recipientCc=" + recipientCc + ", recipientBcc=" + recipientBcc + ", subject='" + subject + '\'' + ", status='" + status + '\'' + ", errorMessage='" + errorMessage + '\'' + ", createdAt=" + createdAt + ", sentAt=" + sentAt + '}';
     }
 }

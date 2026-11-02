@@ -23,7 +23,7 @@ import com.qeema.util.document.dto.DocumentResponse;
 import com.qeema.util.document.dto.DocumentDownload;
 import com.qeema.util.document.dto.DocumentVersionResponse;
 import com.qeema.util.document.dto.DocumentUploadRequest;
-import com.qeema.util.document.service.DocumentService;
+import com.qeema.util.document.service.DocumentUseCase;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,21 +35,16 @@ import jakarta.validation.constraints.NotBlank;
 @Tag(name = "Documents", description = "Document upload, access, and version management")
 public class DocumentController {
 
-    private final DocumentService documentService;
+    private final DocumentUseCase documentService;
 
-    public DocumentController(DocumentService documentService) {
+    public DocumentController(DocumentUseCase documentService) {
         this.documentService = documentService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a document")
-    public DocumentResponse upload(
-            @RequestParam @NotBlank String title,
-            @RequestParam(required = false) String description,
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
-        return documentService.upload(
-                new DocumentUploadRequest(title, description), file, jwt);
+    public DocumentResponse upload(@RequestParam @NotBlank String title, @RequestParam(required = false) String description, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
+        return documentService.upload(new DocumentUploadRequest(title, description), file, jwt);
     }
 
     @GetMapping
@@ -60,9 +55,7 @@ public class DocumentController {
 
     @GetMapping("/{id}/download")
     @Operation(summary = "Download the current document version")
-    public ResponseEntity<InputStreamResource> download(
-            @PathVariable String id,
-            @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<InputStreamResource> download(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 
         DocumentDownload download = documentService.download(id, jwt);
 
@@ -70,43 +63,31 @@ public class DocumentController {
 
         // Set the Content-Disposition header to indicate that the response is an
         // attachment with the specified filename
-        headers.setContentDisposition(ContentDisposition.attachment()
-                .filename(download.filename())
-                .build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(download.getFilename()).build());
 
         // Set the Content-Type and Content-Length headers based on the document's
         // properties
-        headers.setContentType(MediaType.parseMediaType(download.contentType()));
+        headers.setContentType(MediaType.parseMediaType(download.getContentType()));
+        headers.setContentLength(download.getSizeBytes());
 
-        headers.setContentLength(download.sizeBytes());
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(new InputStreamResource(download.content()));
+        return ResponseEntity.ok().headers(headers).body(new InputStreamResource(download.getContent()));
     }
 
     @GetMapping("/{id}/versions")
     @Operation(summary = "View document version history")
-    public List<DocumentVersionResponse> versions(
-            @PathVariable String id,
-            @AuthenticationPrincipal Jwt jwt) {
+    public List<DocumentVersionResponse> versions(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
         return documentService.versions(id, jwt);
     }
 
     @PostMapping(value = "/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a new document version")
-    public DocumentVersionResponse uploadVersion(
-            @PathVariable String id,
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
+    public DocumentVersionResponse uploadVersion(@PathVariable String id, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
         return documentService.uploadVersion(id, file, jwt);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft-delete a document")
-    public ResponseEntity<Void> delete(
-            @PathVariable String id,
-            @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
         documentService.delete(id, jwt);
         return ResponseEntity.noContent().build();
     }

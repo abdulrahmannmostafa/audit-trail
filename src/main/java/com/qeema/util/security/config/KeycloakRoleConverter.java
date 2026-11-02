@@ -18,17 +18,14 @@ import com.qeema.util.identity.service.UserProvisioningService;
 import com.qeema.util.identity.service.UserRoleService;
 
 @Component
-public class KeycloakRoleConverter
-        implements Converter<Jwt, Collection<GrantedAuthority>> {
+public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
     private final UserProvisioningService provisioningService;
     private final UserRoleService userRoleService;
     private final String ACTIVE_STATUS = "ACTIVE";
     private final String ROLE_PREFIX = "ROLE_";
 
-    public KeycloakRoleConverter(
-            UserProvisioningService provisioningService,
-            UserRoleService userRoleService) {
+    public KeycloakRoleConverter(UserProvisioningService provisioningService, UserRoleService userRoleService) {
         this.provisioningService = provisioningService;
         this.userRoleService = userRoleService;
     }
@@ -41,30 +38,17 @@ public class KeycloakRoleConverter
         try {
             user = provisioningService.provision(jwt);
         } catch (InvalidIdentityTokenException exception) {
-            throw new OAuth2AuthenticationException(
-                    new OAuth2Error(
-                            "invalid_token",
-                            "The access token is missing required identity claims",
-                            null),
-                    exception);
+            throw new OAuth2AuthenticationException(new OAuth2Error("invalid_token", "The access token is missing required identity claims", null), exception);
         }
 
         // Do not authorize disabled application accounts
-        if (!ACTIVE_STATUS.equalsIgnoreCase(user.status())) {
-            throw new OAuth2AuthenticationException(
-                    new OAuth2Error(
-                            "invalid_token",
-                            "This application account is disabled",
-                            null));
+        if (!ACTIVE_STATUS.equalsIgnoreCase(user.getStatus())) {
+            throw new OAuth2AuthenticationException(new OAuth2Error("invalid_token", "This application account is disabled", null));
         }
 
         // Load roles from MySQL, not from Keycloak's role claims
-        List<String> roleNames = userRoleService.getRoleNames(user.id());
+        List<String> roleNames = userRoleService.getRoleNames(user.getId());
 
-        return roleNames.stream()
-                .map(name -> name.toUpperCase(Locale.ROOT))
-                .distinct()
-                .map(name -> (GrantedAuthority) new SimpleGrantedAuthority(ROLE_PREFIX + name))
-                .toList();
+        return roleNames.stream().map(name -> name.toUpperCase(Locale.ROOT)).distinct().map(name -> (GrantedAuthority) new SimpleGrantedAuthority(ROLE_PREFIX + name)).toList();
     }
 }

@@ -1,4 +1,3 @@
-
 package com.qeema.util.identity.service;
 
 import java.util.Collection;
@@ -11,6 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.common.exception.InvalidIdentityTokenException;
 import com.qeema.util.audit.service.AuditService;
@@ -21,6 +21,7 @@ import com.qeema.util.identity.repository.UserIdentityRepository;
 import com.qeema.util.identity.repository.UserRepository;
 
 @Service
+@RequiredArgsConstructor
 public class UserProvisioningService {
 
     private final UserRepository userRepository;
@@ -36,17 +37,6 @@ public class UserProvisioningService {
     private final String USER_ENTITY_TYPE = "USER";
 
     private final String IDENTITY_PROVIDER = "keycloak";
-
-    public UserProvisioningService(
-            UserRepository userRepository,
-            UserIdentityRepository identityRepository,
-            UserRoleService userRoleService,
-            AuditService auditService) {
-        this.userRepository = userRepository;
-        this.identityRepository = identityRepository;
-        this.userRoleService = userRoleService;
-        this.auditService = auditService;
-    }
 
     private List<String> extractKeycloakRoles(Jwt jwt) {
         final String REALM_ACCESS_NAME = "realm_access";
@@ -64,13 +54,7 @@ public class UserProvisioningService {
             return List.of();
         }
 
-        return roles.stream()
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .map(role -> role.trim().toUpperCase(Locale.ROOT))
-                .filter(role -> !role.isBlank())
-                .distinct()
-                .toList();
+        return roles.stream().filter(String.class::isInstance).map(String.class::cast).map(role -> role.trim().toUpperCase(Locale.ROOT)).filter(role -> !role.isBlank()).distinct().toList();
     }
 
     @Transactional
@@ -81,25 +65,17 @@ public class UserProvisioningService {
         String issuer = jwt.getIssuer().toString();
         String subject = jwt.getSubject();
 
-        Optional<UserIdentity> existingIdentity = identityRepository
-                .findByIssuerAndSubjectWithUser(issuer, subject);
+        Optional<UserIdentity> existingIdentity = identityRepository.findByIssuerAndSubjectWithUser(issuer, subject);
 
         if (existingIdentity.isPresent()) {
-            auditService.record(
-                    new JwtAuthenticationToken(jwt),
-                    USER_VIEWED_ACTION,
-                    USER_ENTITY_TYPE,
-                    existingIdentity.get().getUser().getId(),
-                    USER_SUCCESS_ACTION,
-                    Map.of("operation", CURRENT_USER_OPERATION));
+            auditService.record(new JwtAuthenticationToken(jwt), USER_VIEWED_ACTION, USER_ENTITY_TYPE, existingIdentity.get().getUser().getId(), USER_SUCCESS_ACTION, Map.of("operation", CURRENT_USER_OPERATION));
             return toResponse(existingIdentity.get().getUser());
         }
 
         return toResponse(createUser(jwt, issuer, subject));
     }
 
-    private User createUser(
-            Jwt jwt, String issuer, String subject) {
+    private User createUser(Jwt jwt, String issuer, String subject) {
 
         final String USER_CREATED_ACTION = "USER_CREATED";
         final String EMAIL_CLAIM_NAME = "email";
@@ -109,20 +85,16 @@ public class UserProvisioningService {
         String displayName = jwt.getClaimAsString(NAME_CLAIM_NAME);
 
         if (email == null || email.isBlank()) {
-            throw new InvalidIdentityTokenException(
-                    "The validated token has no email claim. "
-                            + "Configure the email claim in Keycloak");
+            throw new InvalidIdentityTokenException("The validated token has no email claim. " + "Configure the email claim in Keycloak");
         }
 
         if (displayName == null || displayName.isBlank()) {
             displayName = email;
         }
 
-        User user = userRepository.saveAndFlush(
-                new User(email, displayName, Optional.empty()));
+        User user = userRepository.saveAndFlush(new User(email, displayName, Optional.empty()));
 
-        UserIdentity identity = new UserIdentity(
-                user, IDENTITY_PROVIDER, issuer, subject);
+        UserIdentity identity = new UserIdentity(user, IDENTITY_PROVIDER, issuer, subject);
 
         identityRepository.saveAndFlush(identity);
 
@@ -135,24 +107,12 @@ public class UserProvisioningService {
             }
         }
 
-        auditService.record(
-                authentication,
-                USER_CREATED_ACTION,
-                USER_ENTITY_TYPE,
-                user.getId(),
-                USER_SUCCESS_ACTION,
-                Map.of(),
-                Map.of("displayName", user.getDisplayName()),
-                Map.of("identityProvider", IDENTITY_PROVIDER));
+        auditService.record(authentication, USER_CREATED_ACTION, USER_ENTITY_TYPE, user.getId(), USER_SUCCESS_ACTION, Map.of(), Map.of("displayName", user.getDisplayName()), Map.of("identityProvider", IDENTITY_PROVIDER));
 
         return user;
     }
 
     private UserResponse toResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getStatus());
+        return new UserResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus());
     }
 }

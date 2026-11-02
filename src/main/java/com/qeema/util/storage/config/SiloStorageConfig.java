@@ -15,23 +15,9 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 @Configuration
 public class SiloStorageConfig {
 
-        @Bean
-        public S3Client s3Client(
-                        @Value("${app.storage.silo.endpoint:http://localhost:9100}") String endpoint,
-                        @Value("${app.storage.silo.region:us-east-1}") String region,
-                        @Value("${app.storage.silo.access-key:silo-admin}") String accessKey,
-                        @Value("${app.storage.silo.secret-key:silo-password-change-me}") String secretKey) {
+    @Bean
+    public S3Client s3Client(@Value("${app.storage.silo.endpoint:http://localhost:9100}") String endpoint, @Value("${app.storage.silo.region:us-east-1}") String region, @Value("${app.storage.silo.access-key:silo-admin}") String accessKey, @Value("${app.storage.silo.secret-key:silo-password-change-me}") String secretKey) {
 
-                return S3Client.builder()
-                                .endpointOverride(URI.create(endpoint))
-                                .region(Region.of(region))
-                                .credentialsProvider(
-                                                StaticCredentialsProvider.create(
-                                                                AwsBasicCredentials.create(accessKey, secretKey)))
-                                .serviceConfiguration(
-                                                S3Configuration.builder()
-                                                                .pathStyleAccessEnabled(true)
-                                                                .build())
-                                .build();
-        }
+        return S3Client.builder().endpointOverride(URI.create(endpoint)).region(Region.of(region)).credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey))).serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build()).build();
+    }
 }

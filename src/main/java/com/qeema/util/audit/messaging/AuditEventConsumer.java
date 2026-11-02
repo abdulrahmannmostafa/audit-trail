@@ -26,7 +26,7 @@ public class AuditEventConsumer {
             throw new IllegalArgumentException("Received null audit event");
         }
 
-        String eventId = event.eventId().toString();
+        String eventId = event.getEventId().toString();
         logger.debug("Consuming audit event {}", eventId);
 
         // Check if the event has already been consumed to avoid duplicates

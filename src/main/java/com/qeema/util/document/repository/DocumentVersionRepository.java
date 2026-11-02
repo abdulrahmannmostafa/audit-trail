@@ -8,15 +8,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.qeema.util.document.entity.DocumentVersion;
 
 public interface DocumentVersionRepository
-                extends JpaRepository<DocumentVersion, String> {
+        extends JpaRepository<DocumentVersion, String> {
 
-        List<DocumentVersion> findByDocumentIdOrderByVersionNumberDesc(
-                        String documentId);
+    List<DocumentVersion> findByDocumentIdOrderByVersionNumberDesc(
+            String documentId);
 
-        Optional<DocumentVersion> findByDocumentIdAndId(
-                        String documentId,
-                        String id);
+    Optional<DocumentVersion> findByDocumentIdAndId(
+            String documentId,
+            String id);
 
-        Optional<DocumentVersion> findTopByDocumentIdOrderByVersionNumberDesc(
-                        String documentId);
+    Optional<DocumentVersion> findTopByDocumentIdOrderByVersionNumberDesc(
+            String documentId);
 }

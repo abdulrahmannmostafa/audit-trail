@@ -6,8 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.qeema.util.identity.entity.AppRole;
 
-public interface AppRoleRepository
-        extends JpaRepository<AppRole, Integer> {
+public interface AppRoleRepository extends JpaRepository<AppRole, Integer> {
 
     Optional<AppRole> findByName(String name);
 

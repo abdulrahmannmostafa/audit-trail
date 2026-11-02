@@ -11,8 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "document_versions", uniqueConstraints = @UniqueConstraint(name = "uq_document_version", columnNames = {
-        "document_id", "version_number" }))
+@Table(name = "document_versions", uniqueConstraints = @UniqueConstraint(name = "uq_document_version", columnNames = {"document_id", "version_number"}))
 public class DocumentVersion {
 
     @Id
@@ -56,15 +55,7 @@ public class DocumentVersion {
     protected DocumentVersion() {
     }
 
-    public DocumentVersion(
-            String documentId,
-            int versionNumber,
-            String storageKey,
-            String originalFilename,
-            String contentType,
-            long sizeBytes,
-            String checksumSha256,
-            String uploadedBy) {
+    public DocumentVersion(String documentId, int versionNumber, String storageKey, String originalFilename, String contentType, long sizeBytes, String checksumSha256, String uploadedBy) {
         this.documentId = documentId;
         this.versionNumber = versionNumber;
         this.storageKey = storageKey;

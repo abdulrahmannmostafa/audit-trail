@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_identity", uniqueConstraints = @UniqueConstraint(columnNames = { "issuer", "subject" }))
+@Table(name = "user_identity", uniqueConstraints = @UniqueConstraint(columnNames = {"issuer", "subject"}))
 public class UserIdentity {
 
     @Id
@@ -100,13 +100,6 @@ public class UserIdentity {
 
     @Override
     public String toString() {
-        return "UserIdentity{" +
-                "id='" + id + '\'' +
-                ", user=" + (user != null ? user.getId() : null) +
-                ", provider='" + provider + '\'' +
-                ", issuer='" + issuer + '\'' +
-                ", subject='" + subject + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+        return "UserIdentity{" + "id='" + id + '\'' + ", user=" + (user != null ? user.getId() : null) + ", provider='" + provider + '\'' + ", issuer='" + issuer + '\'' + ", subject='" + subject + '\'' + ", createdAt=" + createdAt + '}';
     }
 }

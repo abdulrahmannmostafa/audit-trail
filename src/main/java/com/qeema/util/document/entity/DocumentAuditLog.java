@@ -42,19 +42,13 @@ public class DocumentAuditLog {
 
     @PrePersist
     void assignId() {
-        if (id == null)
-            id = UUID.randomUUID().toString();
+        if (id == null) id = UUID.randomUUID().toString();
     }
 
     protected DocumentAuditLog() {
     }
 
-    public DocumentAuditLog(
-            String documentId,
-            String versionId,
-            String actorId,
-            String action,
-            Map<String, Object> details) {
+    public DocumentAuditLog(String documentId, String versionId, String actorId, String action, Map<String, Object> details) {
         this.documentId = documentId;
         this.versionId = versionId;
         this.actorId = actorId;

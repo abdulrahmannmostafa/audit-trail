@@ -37,7 +37,6 @@ public class DocumentPermission {
 
     @PrePersist
     void assignId() {
-        if (id == null)
-            id = UUID.randomUUID().toString();
+        if (id == null) id = UUID.randomUUID().toString();
     }
 }

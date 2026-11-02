@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 
 @Entity
-@Table(name = "user_role", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "role_id" }))
+@Table(name = "user_role", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"}))
 public class UserRole {
 
     @Id
@@ -81,11 +81,6 @@ public class UserRole {
 
     @Override
     public String toString() {
-        return "UserRole{" +
-                "id=" + id +
-                ", user=" + (user != null ? user.getId() : null) +
-                ", role=" + (role != null ? role.getId() : null) +
-                ", assignedAt=" + assignedAt +
-                '}';
+        return "UserRole{" + "id=" + id + ", user=" + (user != null ? user.getId() : null) + ", role=" + (role != null ? role.getId() : null) + ", assignedAt=" + assignedAt + '}';
     }
 }

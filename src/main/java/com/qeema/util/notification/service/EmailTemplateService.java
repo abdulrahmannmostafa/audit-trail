@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.audit.service.AuditService;
 import com.qeema.util.common.exception.ResourceNotFoundException;
@@ -16,186 +17,110 @@ import com.qeema.util.notification.entity.EmailTemplate;
 import com.qeema.util.notification.repository.EmailTemplateRepository;
 
 @Service
-public class EmailTemplateService {
+@RequiredArgsConstructor
+public class EmailTemplateService implements EmailTemplateUseCase {
 
-        private final String EMAIL_TEMPLATE_ENTITY_TYPE = "EMAIL_TEMPLATE";
+    private final String EMAIL_TEMPLATE_ENTITY_TYPE = "EMAIL_TEMPLATE";
 
-        private final String EMAIL_TEMPLATE_LISTED_ACTION = "EMAIL_TEMPLATES_LISTED";
-        private final String EMAIL_TEMPLATE_VIEWED_ACTION = "EMAIL_TEMPLATE_VIEWED";
-        private final String EMAIL_TEMPLATE_PREVIEWED_ACTION = "EMAIL_TEMPLATE_PREVIEWED";
-        private final String EMAIL_TEMPLATE_CREATED_ACTION = "EMAIL_TEMPLATE_CREATED";
-        private final String EMAIL_TEMPLATE_UPDATED_ACTION = "EMAIL_TEMPLATE_UPDATED";
-        private final String EMAIL_TEMPLATE_DELETED_ACTION = "EMAIL_TEMPLATE_DELETED";
+    private final String EMAIL_TEMPLATE_LISTED_ACTION = "EMAIL_TEMPLATES_LISTED";
+    private final String EMAIL_TEMPLATE_VIEWED_ACTION = "EMAIL_TEMPLATE_VIEWED";
+    private final String EMAIL_TEMPLATE_PREVIEWED_ACTION = "EMAIL_TEMPLATE_PREVIEWED";
+    private final String EMAIL_TEMPLATE_CREATED_ACTION = "EMAIL_TEMPLATE_CREATED";
+    private final String EMAIL_TEMPLATE_UPDATED_ACTION = "EMAIL_TEMPLATE_UPDATED";
+    private final String EMAIL_TEMPLATE_DELETED_ACTION = "EMAIL_TEMPLATE_DELETED";
 
-        private final String EMAIL_TEMPLATE_SUCCESS_ACTION = "SUCCESS";
+    private final String EMAIL_TEMPLATE_SUCCESS_ACTION = "SUCCESS";
 
-        private final String EMAIL_TEMPLATE_COLLECTION_TYPE = "collection";
-        private final String EMAIL_TEMPLATE_SINGLE_TYPE = "single";
-        private final String EMAIL_TEMPLATE_PREVIEW_TYPE = "preview";
+    private final String EMAIL_TEMPLATE_COLLECTION_TYPE = "collection";
+    private final String EMAIL_TEMPLATE_SINGLE_TYPE = "single";
+    private final String EMAIL_TEMPLATE_PREVIEW_TYPE = "preview";
 
-        private final EmailTemplateRepository templateRepository;
-        private final EmailTemplateRenderer renderer;
-        private final AuditService auditService;
+    private final EmailTemplateRepository templateRepository;
+    private final EmailTemplateRenderer renderer;
+    private final AuditService auditService;
 
-        public EmailTemplateService(
-                        EmailTemplateRepository templateRepository,
-                        EmailTemplateRenderer renderer,
-                        AuditService auditService) {
-                this.templateRepository = templateRepository;
-                this.renderer = renderer;
-                this.auditService = auditService;
+    @Transactional(readOnly = true)
+    public List<EmailTemplateResponse> getTemplates(Authentication authentication) {
+        List<EmailTemplateResponse> templates = templateRepository.findAll().stream().map(this::toResponse).toList();
+        auditService.record(authentication, EMAIL_TEMPLATE_LISTED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_COLLECTION_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of("count", templates.size()));
+        return templates;
+    }
+
+    @Transactional(readOnly = true)
+    public PreviewEmailResponse preview(String name, Map<String, Object> variables, Authentication authentication) {
+        EmailTemplate template = getEnabledTemplate(name);
+        auditService.record(authentication, EMAIL_TEMPLATE_PREVIEWED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_PREVIEW_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of("name", template.getName()));
+        return new PreviewEmailResponse(template.getName(), renderer.renderSubject(template.getSubjectTemplate(), variables), renderer.renderHtml(template.getHtmlContent(), variables));
+    }
+
+    @Transactional(readOnly = true)
+    public EmailTemplateResponse getTemplate(String name, Authentication authentication) {
+        EmailTemplateResponse response = toResponse(templateRepository.findByName(name).orElseThrow(() -> new ResourceNotFoundException("Email template not found: " + name)));
+        auditService.record(authentication, EMAIL_TEMPLATE_VIEWED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_SINGLE_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of("name", response.getName()));
+        return response;
+    }
+
+    @Transactional
+    public EmailTemplateResponse create(EmailTemplateRequest request, Authentication authentication) {
+        String name = normalizeName(request.getName());
+        if (templateRepository.existsByName(name)) {
+            throw new IllegalArgumentException("Email template already exists: " + name);
         }
 
-        @Transactional(readOnly = true)
-        public List<EmailTemplateResponse> getTemplates(
-                        Authentication authentication) {
-                List<EmailTemplateResponse> templates = templateRepository.findAll().stream()
-                                .map(this::toResponse)
-                                .toList();
-                auditService.record(authentication, EMAIL_TEMPLATE_LISTED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_COLLECTION_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of("count", templates.size()));
-                return templates;
+        EmailTemplate template = new EmailTemplate(name, request.getSubjectTemplate().trim(), request.getHtmlContent(), request.isEnabled());
+        EmailTemplate saved = templateRepository.save(template);
+        auditService.record(authentication, EMAIL_TEMPLATE_CREATED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_SINGLE_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of(), Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public EmailTemplateResponse update(String name, EmailTemplateRequest request, Authentication authentication) {
+        EmailTemplate template = findTemplate(name);
+        String updatedName = normalizeName(request.getName());
+
+        if (templateRepository.existsByNameAndIdNot(updatedName, template.getId())) {
+            throw new IllegalArgumentException("Email template already exists: " + updatedName);
         }
 
-        @Transactional(readOnly = true)
-        public PreviewEmailResponse preview(
-                        String name,
-                        Map<String, Object> variables,
-                        Authentication authentication) {
-                EmailTemplate template = getEnabledTemplate(name);
-                auditService.record(authentication, EMAIL_TEMPLATE_PREVIEWED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_PREVIEW_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of("name", template.getName()));
-                return new PreviewEmailResponse(
-                                template.getName(),
-                                renderer.renderSubject(
-                                                template.getSubjectTemplate(), variables),
-                                renderer.renderHtml(template.getHtmlContent(), variables));
+        template.setName(updatedName);
+        template.setSubjectTemplate(request.getSubjectTemplate().trim());
+        template.setHtmlContent(request.getHtmlContent());
+        template.setEnabled(request.isEnabled());
+        EmailTemplate saved = templateRepository.save(template);
+        auditService.record(authentication, EMAIL_TEMPLATE_UPDATED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_SINGLE_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of("name", template.getName(), "enabled", template.isEnabled()), Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void delete(String name, Authentication authentication) {
+        EmailTemplate template = findTemplate(name);
+        templateRepository.delete(template);
+        auditService.record(authentication, EMAIL_TEMPLATE_DELETED_ACTION, EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_SINGLE_TYPE, EMAIL_TEMPLATE_SUCCESS_ACTION, Map.of("name", template.getName(), "enabled", template.isEnabled()), Map.of(), Map.of("name", template.getName()));
+    }
+
+    @Transactional(readOnly = true)
+    public EmailTemplate getEnabledTemplate(String name) {
+        EmailTemplate template = findTemplate(name);
+
+        if (!template.isEnabled()) {
+            throw new IllegalArgumentException("Email template is disabled: " + name);
         }
+        return template;
+    }
 
-        @Transactional(readOnly = true)
-        public EmailTemplateResponse getTemplate(
-                        String name,
-                        Authentication authentication) {
-                EmailTemplateResponse response = toResponse(templateRepository.findByName(name)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Email template not found: " + name)));
-                auditService.record(authentication, EMAIL_TEMPLATE_VIEWED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE, EMAIL_TEMPLATE_SINGLE_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of("name", response.name()));
-                return response;
+    private EmailTemplate findTemplate(String name) {
+        String normalizedName = normalizeName(name);
+        return templateRepository.findByName(normalizedName).orElseThrow(() -> new ResourceNotFoundException("Email template not found: " + normalizedName));
+    }
+
+    private String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Template name must not be blank");
         }
+        return name.trim();
+    }
 
-        @Transactional
-        public EmailTemplateResponse create(
-                        EmailTemplateRequest request,
-                        Authentication authentication) {
-                String name = normalizeName(request.name());
-                if (templateRepository.existsByName(name)) {
-                        throw new IllegalArgumentException(
-                                        "Email template already exists: " + name);
-                }
-
-                EmailTemplate template = new EmailTemplate(
-                                name,
-                                request.subjectTemplate().trim(),
-                                request.htmlContent(),
-                                request.enabled());
-                EmailTemplate saved = templateRepository.save(template);
-                auditService.record(
-                                authentication,
-                                EMAIL_TEMPLATE_CREATED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE,
-                                EMAIL_TEMPLATE_SINGLE_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of(),
-                                Map.of("name", saved.getName(), "enabled", saved.isEnabled()),
-                                Map.of("name", saved.getName()));
-                return toResponse(saved);
-        }
-
-        @Transactional
-        public EmailTemplateResponse update(
-                        String name,
-                        EmailTemplateRequest request,
-                        Authentication authentication) {
-                EmailTemplate template = findTemplate(name);
-                String updatedName = normalizeName(request.name());
-
-                if (templateRepository.existsByNameAndIdNot(
-                                updatedName, template.getId())) {
-                        throw new IllegalArgumentException(
-                                        "Email template already exists: " + updatedName);
-                }
-
-                template.setName(updatedName);
-                template.setSubjectTemplate(request.subjectTemplate().trim());
-                template.setHtmlContent(request.htmlContent());
-                template.setEnabled(request.enabled());
-                EmailTemplate saved = templateRepository.save(template);
-                auditService.record(
-                                authentication,
-                                EMAIL_TEMPLATE_UPDATED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE,
-                                EMAIL_TEMPLATE_SINGLE_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of("name", template.getName(), "enabled", template.isEnabled()),
-                                Map.of("name", saved.getName(), "enabled", saved.isEnabled()),
-                                Map.of("name", saved.getName()));
-                return toResponse(saved);
-        }
-
-        @Transactional
-        public void delete(String name, Authentication authentication) {
-                EmailTemplate template = findTemplate(name);
-                templateRepository.delete(template);
-                auditService.record(
-                                authentication,
-                                EMAIL_TEMPLATE_DELETED_ACTION,
-                                EMAIL_TEMPLATE_ENTITY_TYPE,
-                                EMAIL_TEMPLATE_SINGLE_TYPE,
-                                EMAIL_TEMPLATE_SUCCESS_ACTION,
-                                Map.of("name", template.getName(), "enabled", template.isEnabled()),
-                                Map.of(),
-                                Map.of("name", template.getName()));
-        }
-
-        @Transactional(readOnly = true)
-        public EmailTemplate getEnabledTemplate(String name) {
-                EmailTemplate template = findTemplate(name);
-
-                if (!template.isEnabled()) {
-                        throw new IllegalArgumentException(
-                                        "Email template is disabled: " + name);
-                }
-                return template;
-        }
-
-        private EmailTemplate findTemplate(String name) {
-                String normalizedName = normalizeName(name);
-                return templateRepository.findByName(normalizedName)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Email template not found: " + normalizedName));
-        }
-
-        private String normalizeName(String name) {
-                if (name == null || name.isBlank()) {
-                        throw new IllegalArgumentException(
-                                        "Template name must not be blank");
-                }
-                return name.trim();
-        }
-
-        private EmailTemplateResponse toResponse(EmailTemplate template) {
-                return new EmailTemplateResponse(
-                                template.getId(),
-                                template.getName(),
-                                template.getSubjectTemplate(),
-                                template.getHtmlContent(),
-                                template.isEnabled());
-        }
+    private EmailTemplateResponse toResponse(EmailTemplate template) {
+        return new EmailTemplateResponse(template.getId(), template.getName(), template.getSubjectTemplate(), template.getHtmlContent(), template.isEnabled());
+    }
 }

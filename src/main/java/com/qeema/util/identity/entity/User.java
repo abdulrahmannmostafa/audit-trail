@@ -107,14 +107,6 @@ public class User {
 
     @Override
     public String toString() {
-        return "User{" +
-                "id='" + id + '\'' +
-                ", email='" + email + '\'' +
-                ", displayName='" + displayName + '\'' +
-                ", avatarUrl='" + avatarUrl + '\'' +
-                ", status='" + status + '\'' +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
+        return "User{" + "id='" + id + '\'' + ", email='" + email + '\'' + ", displayName='" + displayName + '\'' + ", avatarUrl='" + avatarUrl + '\'' + ", status='" + status + '\'' + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
     }
 }

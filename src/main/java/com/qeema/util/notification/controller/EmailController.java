@@ -30,9 +30,7 @@ public class EmailController {
     @PostMapping("/send")
     @Operation(summary = "Send an email", description = "Sends a plain-text email or renders an enabled email template")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public SendEmailResponse sendEmail(
-            @Valid @RequestBody SendEmailRequest request,
-            Authentication authentication) {
+    public SendEmailResponse sendEmail(@Valid @RequestBody SendEmailRequest request, Authentication authentication) {
         return emailService.sendEmail(request, authentication);
     }
 }

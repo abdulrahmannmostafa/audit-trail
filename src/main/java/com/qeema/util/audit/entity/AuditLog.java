@@ -73,17 +73,17 @@ public class AuditLog {
     }
 
     private AuditLog(AuditEvent event) {
-        eventId = event.eventId().toString();
-        occurredAt = event.occurredAt();
-        actorId = event.actorId();
-        actorUsername = event.actorUsername();
-        action = event.action();
-        entityType = event.entityType();
-        entityId = event.entityId();
-        outcome = event.outcome();
-        oldValues = event.oldValues();
-        newValues = event.newValues();
-        metadata = event.metadata();
+        eventId = event.getEventId().toString();
+        occurredAt = event.getOccurredAt();
+        actorId = event.getActorId();
+        actorUsername = event.getActorUsername();
+        action = event.getAction();
+        entityType = event.getEntityType();
+        entityId = event.getEntityId();
+        outcome = event.getOutcome();
+        oldValues = event.getOldValues();
+        newValues = event.getNewValues();
+        metadata = event.getMetadata();
     }
 
     public static AuditLog from(AuditEvent event) {
