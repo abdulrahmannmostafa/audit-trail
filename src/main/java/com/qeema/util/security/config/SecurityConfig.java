@@ -47,6 +47,8 @@ public class SecurityConfig {
                                                                 SWAGGER_UI_PATH_WILDCARD,
                                                                 SWAGGER_API_DOCS_PATH_WILDCARD)
                                                 .permitAll()
+                                                .requestMatchers("/actuator/health", "/actuator/info")
+                                                .permitAll()
                                                 .requestMatchers(ADMIN_PATH).hasRole(ADMIN_ROLE)
                                                 .requestMatchers(USER_PATH).hasAnyRole(USER_ROLE, ADMIN_ROLE)
                                                 .anyRequest().authenticated())
@@ -62,8 +64,10 @@ public class SecurityConfig {
                         @Value("${app.frontend-origin:http://localhost:5173}") String frontendOrigin) {
 
                 final List<String> ALLOWED_METHODS = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
-                final List<String> ALLOWED_HEADERS = List.of("Authorization", "Content-Type");
-                final List<String> EXPOSED_HEADERS = List.of("Content-Disposition"); // for file downloads
+                final List<String> ALLOWED_HEADERS = List.of(
+                                "Authorization", "Content-Type", "X-Correlation-ID");
+                final List<String> EXPOSED_HEADERS = List.of(
+                                "Content-Disposition", "X-Correlation-ID");
 
                 CorsConfiguration configuration = new CorsConfiguration();
 

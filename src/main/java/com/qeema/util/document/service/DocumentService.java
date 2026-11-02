@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -64,6 +65,8 @@ public class DocumentService {
         private final UserIdentityRepository identityRepository;
         private final ObjectStorageService storage;
         private final AuditService auditService;
+        private final long maxFileSizeBytes;
+        private final List<String> allowedContentTypes;
 
         public DocumentService(
                         DocumentRepository documentRepository,
@@ -72,7 +75,9 @@ public class DocumentService {
                         DocumentPermissionRepository permissionRepository,
                         UserIdentityRepository identityRepository,
                         ObjectStorageService storage,
-                        AuditService auditService) {
+                        AuditService auditService,
+                        @Value("${app.documents.max-size-bytes:52428800}") long maxFileSizeBytes,
+                        @Value("${app.documents.allowed-content-types}") List<String> allowedContentTypes) {
                 this.documentRepository = documentRepository;
                 this.versionRepository = versionRepository;
                 this.auditRepository = auditRepository;
@@ -80,6 +85,8 @@ public class DocumentService {
                 this.identityRepository = identityRepository;
                 this.storage = storage;
                 this.auditService = auditService;
+                this.maxFileSizeBytes = maxFileSizeBytes;
+                this.allowedContentTypes = allowedContentTypes;
         }
 
         @Transactional
@@ -341,6 +348,17 @@ public class DocumentService {
                 if (file == null || file.isEmpty()) {
                         throw new IllegalArgumentException("A non-empty document file is required");
                 }
+                if (file.getSize() > maxFileSizeBytes) {
+                        throw new IllegalArgumentException(
+                                        "Document exceeds the maximum allowed size of "
+                                                        + maxFileSizeBytes + " bytes");
+                }
+
+                String type = contentType(file);
+                if (!allowedContentTypes.contains(type)) {
+                        throw new IllegalArgumentException(
+                                        "Unsupported document content type: " + type);
+                }
         }
 
         private String safeFilename(MultipartFile file) {
@@ -355,8 +373,9 @@ public class DocumentService {
         private String contentType(MultipartFile file) {
                 final String CONTENT_TYPE = "application/octet-stream";
 
-                return file.getContentType() == null
+                String contentType = file.getContentType() == null
                                 ? CONTENT_TYPE
                                 : file.getContentType();
+                return contentType.split(";", 2)[0].trim().toLowerCase(java.util.Locale.ROOT);
         }
 }
