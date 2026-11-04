@@ -16,11 +16,14 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "audit_log")
 @Getter
 @Setter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class AuditLog {
 
     @Id
@@ -73,9 +76,7 @@ public class AuditLog {
         }
     }
 
-    protected AuditLog() {
-    }
-
+    @Builder
     private AuditLog(AuditEvent event) {
         eventId = event.getEventId().toString();
         occurredAt = event.getOccurredAt();

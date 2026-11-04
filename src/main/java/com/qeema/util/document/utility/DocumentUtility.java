@@ -13,10 +13,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.oauth2.jwt.Jwt;
 
-import com.qeema.util.audit.service.AuditService;
 import com.qeema.util.common.exception.DocumentStorageException;
 import com.qeema.util.common.exception.ResourceNotFoundException;
 import com.qeema.util.document.constants.DocumentConstants;
@@ -33,6 +30,7 @@ import com.qeema.util.document.repository.DocumentVersionRepository;
 import com.qeema.util.identity.entity.UserIdentity;
 import com.qeema.util.identity.repository.UserIdentityRepository;
 import com.qeema.util.storage.service.ObjectStorageGateway;
+import com.qeema.util.common.security.AuthenticatedUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,25 +50,33 @@ public class DocumentUtility {
             List<String> allowedContentTypes) {
         int nextVersion = versionRepository.findTopByDocumentIdOrderByVersionNumberDesc(document.getId())
                 .map(version -> version.getVersionNumber() + 1).orElse(1);
+
         String storageKey = DocumentConstants.DOCUMENT_KEY_PREFIX + document.getId()
                 + DocumentConstants.VERSION_KEY_PREFIX + nextVersion + "/" + UUID.randomUUID();
 
         try (InputStream input = file.getInputStream()) {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
             storage.upload(storageKey, new DigestInputStream(input, digest), file.getSize(), contentType(file));
+
             String checksum = HexFormat.of().formatHex(digest.digest());
+
             DocumentVersion version = new DocumentVersion(document.getId(), nextVersion, storageKey,
                     safeFilename(file), contentType(file), file.getSize(), checksum, actorId);
+
             DocumentVersion saved = versionRepository.save(version);
+
             document.setCurrentVersionId(saved.getId());
+
             documentRepository.save(document);
+
             return saved;
         } catch (IOException | NoSuchAlgorithmException | RuntimeException exception) {
             throw new DocumentStorageException("Unable to store document content", exception);
         }
     }
 
-    public Document findAccessible(String id, Jwt jwt, String actorId) {
+    public Document findAccessible(String id, String actorId) {
         return documentRepository.findAccessibleById(id, actorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
     }
@@ -80,10 +86,11 @@ public class DocumentUtility {
                 .orElseThrow(() -> new ResourceNotFoundException("Current document version not found"));
     }
 
-    public String actorId(Jwt jwt) {
+    public String actorId(AuthenticatedUser user) {
         UserIdentity identity = identityRepository
-                .findByIssuerAndSubjectWithUser(jwt.getIssuer().toString(), jwt.getSubject())
+                .findByIssuerAndSubjectWithUser(user.issuer(), user.subject())
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user is not provisioned"));
+
         return identity.getUser().getId();
     }
 
@@ -96,6 +103,7 @@ public class DocumentUtility {
     public DocumentResponse response(Document document) {
         DocumentVersion version = document.getCurrentVersionId() == null ? null
                 : versionRepository.findById(document.getCurrentVersionId()).orElse(null);
+
         return documentMapper.toResponse(document, version);
     }
 

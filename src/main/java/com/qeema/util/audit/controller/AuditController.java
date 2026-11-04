@@ -17,7 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.audit.dto.AuditLogResponse;
-import com.qeema.util.audit.entity.AuditLog;
 import com.qeema.util.audit.annotation.Audited;
 import com.qeema.util.audit.constants.AuditConstants;
 import com.qeema.util.audit.mapper.AuditLogMapper;

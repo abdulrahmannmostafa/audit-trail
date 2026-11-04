@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import com.qeema.util.common.exception.InvalidIdentityTokenException;
@@ -32,7 +33,7 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
         // Find or create the local application user
         UserResponse user;
         try {
-            user = provisioningService.provision(jwt);
+            user = provisioningService.provision(new JwtAuthenticationToken(jwt));
         } catch (InvalidIdentityTokenException exception) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error("invalid_token", "The access token is missing required identity claims", null),

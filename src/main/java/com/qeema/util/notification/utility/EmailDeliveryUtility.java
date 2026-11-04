@@ -30,19 +30,28 @@ public class EmailDeliveryUtility {
     public void sendEmail(SendEmailRequest request, String subject, String body, boolean html)
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
+
         MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+
         helper.setFrom(fromAddress);
+
         helper.setTo(request.getTo().toArray(String[]::new));
+
         setRecipients(helper, request.getCc(), true);
+
         setRecipients(helper, request.getBcc(), false);
+
         helper.setSubject(subject);
+
         helper.setText(body, html);
+
         mailSender.send(message);
     }
 
     public void markEmailAsFailed(EmailLog log, Exception exception) throws MailException {
         log.setStatus("FAILED");
         log.setErrorMessage(exception.getMessage());
+
         try {
             logRepository.save(log);
         } catch (DataAccessException logException) {
@@ -52,9 +61,11 @@ public class EmailDeliveryUtility {
 
     private void setRecipients(MimeMessageHelper helper, List<String> recipients, boolean cc)
             throws MessagingException {
+
         if (recipients == null || recipients.isEmpty()) {
             return;
         }
+
         if (cc) {
             helper.setCc(recipients.toArray(String[]::new));
         } else {

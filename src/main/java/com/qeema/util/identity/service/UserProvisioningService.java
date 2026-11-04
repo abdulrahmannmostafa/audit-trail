@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,8 @@ import com.qeema.util.identity.repository.UserRepository;
 import com.qeema.util.identity.constants.IdentityConstants;
 import com.qeema.util.identity.mapper.UserMapper;
 import com.qeema.util.identity.utility.IdentityUtility;
+import com.qeema.util.common.security.AuthenticatedUser;
+import com.qeema.util.common.security.AuthenticationUserProvider;
 
 @Service
 @RequiredArgsConstructor
@@ -31,16 +32,18 @@ public class UserProvisioningService {
     private final AuditService auditService;
     private final UserMapper userMapper;
     private final IdentityUtility identityUtility;
+    private final AuthenticationUserProvider authenticationUserProvider;
 
     @Transactional
-    public UserResponse provision(Jwt jwt) {
-        String issuer = jwt.getIssuer().toString();
-        String subject = jwt.getSubject();
+    public UserResponse provision(Authentication authentication) {
+        AuthenticatedUser userIdentity = authenticationUserProvider.resolve(authentication);
+        String issuer = userIdentity.issuer();
+        String subject = userIdentity.subject();
 
         Optional<UserIdentity> existingIdentity = identityRepository.findByIssuerAndSubjectWithUser(issuer, subject);
 
         if (existingIdentity.isPresent()) {
-            auditService.recordAuditEvent(new JwtAuthenticationToken(jwt), "USER_VIEWED",
+            auditService.recordAuditEvent(authentication, "USER_VIEWED",
                     IdentityConstants.USER_ENTITY,
                     existingIdentity.get().getUser().getId(), IdentityConstants.SUCCESS,
                     Map.of("operation", "current-user"));
@@ -48,14 +51,14 @@ public class UserProvisioningService {
             return userMapper.toResponse(existingIdentity.get().getUser());
         }
 
-        String email = identityUtility.getEmail(jwt);
+        String email = userIdentity.email();
 
         if (email == null || email.isBlank()) {
             throw new InvalidIdentityTokenException(
                     "The validated token has no email claim. " + "Configure the email claim in Keycloak");
         }
 
-        String displayName = identityUtility.displayName(jwt, email);
+        String displayName = userIdentity.displayName();
 
         User user = userRepository.saveAndFlush(new User(email, displayName, Optional.empty()));
 
@@ -63,9 +66,7 @@ public class UserProvisioningService {
 
         identityRepository.saveAndFlush(identity);
 
-        List<String> keycloakRoles = identityUtility.extractRoles(jwt);
-
-        JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
+        List<String> keycloakRoles = identityUtility.extractRoles(userIdentity);
 
         for (String role : keycloakRoles) {
             if (role.equals(IdentityConstants.USER) || role.equals(IdentityConstants.ADMIN)) {

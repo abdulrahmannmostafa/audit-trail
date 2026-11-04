@@ -3,8 +3,7 @@ package com.qeema.util.document.service;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +24,8 @@ import com.qeema.util.document.repository.DocumentVersionRepository;
 import com.qeema.util.storage.service.ObjectStorageGateway;
 import com.qeema.util.document.constants.DocumentConstants;
 import com.qeema.util.document.utility.DocumentUtility;
+import com.qeema.util.common.security.AuthenticatedUser;
+import com.qeema.util.common.security.AuthenticationUserProvider;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class DocumentService implements DocumentUseCase {
         private final ObjectStorageGateway storage;
         private final AuditService auditService;
         private final DocumentUtility documentUtility;
+        private final AuthenticationUserProvider authenticationUserProvider;
 
         @Value("${app.documents.max-size-bytes:52428800}")
         private long maxFileSizeBytes;
@@ -43,18 +45,20 @@ public class DocumentService implements DocumentUseCase {
         private List<String> allowedContentTypes;
 
         @Transactional
-        public DocumentResponse uploadDocument(DocumentUploadRequest request, MultipartFile file, Jwt jwt) {
+        public DocumentResponse uploadDocument(DocumentUploadRequest request, MultipartFile file,
+                        Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
 
                 documentUtility.validateFile(file);
 
-                String actorId = documentUtility.actorId(jwt);
+                String actorId = documentUtility.actorId(user);
 
                 Document document = documentRepository
                                 .save(new Document(request.getTitle().trim(), request.getDescription(), actorId));
 
                 documentUtility.addVersion(document, file, actorId, allowedContentTypes);
 
-                auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.UPLOADED,
+                auditService.recordAuditEventWithSnapshots(authentication, DocumentConstants.UPLOADED,
                                 DocumentConstants.ENTITY_TYPE,
                                 document.getId(),
                                 DocumentConstants.SUCCESS, Map.of(),
@@ -68,13 +72,14 @@ public class DocumentService implements DocumentUseCase {
         }
 
         @Transactional(readOnly = true)
-        public List<DocumentResponse> listDocuments(Jwt jwt) {
+        public List<DocumentResponse> listDocuments(Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
 
-                List<DocumentResponse> documents = documentRepository.findAccessible(documentUtility.actorId(jwt))
+                List<DocumentResponse> documents = documentRepository.findAccessible(documentUtility.actorId(user))
                                 .stream()
                                 .map(documentUtility::response).toList();
 
-                auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.LISTED,
+                auditService.recordAuditEventWithSnapshots(authentication, DocumentConstants.LISTED,
                                 DocumentConstants.ENTITY_TYPE,
                                 DocumentConstants.ENTITY_ID,
                                 DocumentConstants.SUCCESS, Map.of(), Map.of("count", documents.size()),
@@ -83,9 +88,9 @@ public class DocumentService implements DocumentUseCase {
                 return documents;
         }
 
-        @Transactional
-        public DocumentDownload downloadDocument(String id, Jwt jwt) {
-                Document document = documentUtility.findAccessible(id, jwt, documentUtility.actorId(jwt));
+        public DocumentDownload downloadDocument(String id, Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
+                Document document = documentUtility.findAccessible(id, documentUtility.actorId(user));
                 DocumentVersion version = documentUtility.currentVersion(document);
 
                 try {
@@ -93,7 +98,7 @@ public class DocumentService implements DocumentUseCase {
                                         version.getOriginalFilename(), version.getContentType(),
                                         version.getSizeBytes());
 
-                        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt),
+                        auditService.recordAuditEventWithSnapshots(authentication,
                                         DocumentConstants.DOWNLOAD,
                                         DocumentConstants.ENTITY_TYPE,
                                         document.getId(), DocumentConstants.SUCCESS, Map.of(),
@@ -107,15 +112,16 @@ public class DocumentService implements DocumentUseCase {
         }
 
         @Transactional(readOnly = true)
-        public List<DocumentVersionResponse> listDocumentVersions(String id, Jwt jwt) {
-                Document document = documentUtility.findAccessible(id, jwt, documentUtility.actorId(jwt));
+        public List<DocumentVersionResponse> listDocumentVersions(String id, Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
+                Document document = documentUtility.findAccessible(id, documentUtility.actorId(user));
 
                 List<DocumentVersionResponse> versions = versionRepository
                                 .findByDocumentIdOrderByVersionNumberDesc(document.getId()).stream()
                                 .map(documentUtility::versionResponse)
                                 .toList();
 
-                auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt),
+                auditService.recordAuditEventWithSnapshots(authentication,
                                 DocumentConstants.VERSIONS_VIEWED,
                                 DocumentConstants.ENTITY_TYPE,
                                 document.getId(), DocumentConstants.SUCCESS, Map.of(), Map.of("count", versions.size()),
@@ -125,20 +131,21 @@ public class DocumentService implements DocumentUseCase {
         }
 
         @Transactional
-        public DocumentVersionResponse uploadVersion(String id, MultipartFile file, Jwt jwt) {
+        public DocumentVersionResponse uploadVersion(String id, MultipartFile file, Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
 
                 documentUtility.validateFile(file);
 
-                Document document = documentUtility.findAccessible(id, jwt, documentUtility.actorId(jwt));
+                Document document = documentUtility.findAccessible(id, documentUtility.actorId(user));
 
-                String actorId = documentUtility.actorId(jwt);
+                String actorId = documentUtility.actorId(user);
 
                 if (!documentUtility.canEdit(document, actorId)) {
                         throw new AccessDeniedException("You do not have permission to edit this document");
                 }
 
                 DocumentVersion version = documentUtility.addVersion(document, file, actorId, allowedContentTypes);
-                auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt),
+                auditService.recordAuditEventWithSnapshots(authentication,
                                 DocumentConstants.VERSION_CREATED,
                                 DocumentConstants.ENTITY_TYPE,
                                 document.getId(), DocumentConstants.SUCCESS, Map.of(),
@@ -153,10 +160,11 @@ public class DocumentService implements DocumentUseCase {
         }
 
         @Transactional
-        public void deleteDocument(String id, Jwt jwt) {
-                Document document = documentUtility.findAccessible(id, jwt, documentUtility.actorId(jwt));
+        public void deleteDocument(String id, Authentication authentication) {
+                AuthenticatedUser user = authenticationUserProvider.resolve(authentication);
+                Document document = documentUtility.findAccessible(id, documentUtility.actorId(user));
 
-                String actorId = documentUtility.actorId(jwt);
+                String actorId = documentUtility.actorId(user);
 
                 if (!document.getOwnerId().equals(actorId)) {
                         throw new AccessDeniedException("Only the document owner can delete this document");
@@ -168,7 +176,7 @@ public class DocumentService implements DocumentUseCase {
 
                 documentUtility.audit(document, null, actorId, DocumentConstants.DELETE, Map.of());
 
-                auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.DELETED,
+                auditService.recordAuditEventWithSnapshots(authentication, DocumentConstants.DELETED,
                                 DocumentConstants.ENTITY_TYPE,
                                 document.getId(),
                                 DocumentConstants.SUCCESS, Map.of("status", "ACTIVE"), Map.of("status", "DELETED"),
