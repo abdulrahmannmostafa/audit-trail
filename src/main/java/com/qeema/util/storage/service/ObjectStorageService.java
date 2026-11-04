@@ -13,12 +13,14 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Service
 @RequiredArgsConstructor
 public class ObjectStorageService implements ObjectStorageGateway {
 
     private final S3Client s3Client;
+
     @Value("${app.storage.silo.bucket}")
     private String bucket;
 
@@ -35,7 +37,7 @@ public class ObjectStorageService implements ObjectStorageGateway {
 
         try {
             s3Client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
-        } catch (software.amazon.awssdk.services.s3.model.S3Exception exception) {
+        } catch (S3Exception exception) {
             if (exception.statusCode() != ERROR_CODE) {
                 throw exception;
             }

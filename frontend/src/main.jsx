@@ -758,6 +758,8 @@ function VersionModal({ item, close, notify, refresh }) {
 }
 
 function Audit({ search }) {
+  const profile = getUserProfile();
+  const isAdmin = profile.isAdmin;
   const [filters, setFilters] = useState({
     action: "",
     entityType: "",
@@ -790,7 +792,9 @@ function Audit({ search }) {
       <PageIntro
         eyebrow="PROTECTED HISTORY"
         title="Audit trail"
-        text="Trace every business action with actor, outcome and before/after values."
+        text={isAdmin
+          ? "Trace every business action with actor, outcome and before/after values."
+          : "Review your own business actions with outcome and before/after values."}
         action={
           <button className="secondary" onClick={load}>
             {icons.refresh} Refresh
@@ -819,15 +823,17 @@ function Audit({ search }) {
               placeholder="DOCUMENT"
             />
           </label>
-          <label>
-            Actor ID
-            <input
-              value={filters.actorId}
-              onChange={(e) =>
-                setFilters({ ...filters, actorId: e.target.value })
-              }
-            />
-          </label>
+          {isAdmin && (
+            <label>
+              Actor ID
+              <input
+                value={filters.actorId}
+                onChange={(e) =>
+                  setFilters({ ...filters, actorId: e.target.value })
+                }
+              />
+            </label>
+          )}
           <label>
             From
             <input
@@ -1214,6 +1220,22 @@ function SendModal({ templates, close, notify }) {
           />
         </label>
         <label>
+          CC <small>Optional, comma separated</small>
+          <input
+            value={form.cc}
+            onChange={(e) => update("cc", e.target.value)}
+            placeholder="copy@example.com"
+          />
+        </label>
+        <label>
+          BCC <small>Optional, comma separated</small>
+          <input
+            value={form.bcc}
+            onChange={(e) => update("bcc", e.target.value)}
+            placeholder="hidden@example.com"
+          />
+        </label>
+        <label>
           Template
           <select
             value={form.templateName}
@@ -1364,13 +1386,17 @@ function PreviewModal({ template, close, notify }) {
 
 function Identity({ notify }) {
   const [roles, setRoles] = useState([]);
+  const [users, setUsers] = useState([]);
   const [userId, setUserId] = useState("");
   const [userRoles, setUserRoles] = useState([]);
   const [roleName, setRoleName] = useState("");
   const [loading, setLoading] = useState(true);
   const loadRoles = () =>
-    api("/api/admin/roles")
-      .then(setRoles)
+    Promise.all([api("/api/admin/roles"), api("/api/admin/users")])
+      .then(([roleData, userData]) => {
+        setRoles(roleData);
+        setUsers(userData);
+      })
       .catch((error) => notify(errorText(error)))
       .finally(() => setLoading(false));
   useEffect(() => {
@@ -1426,12 +1452,22 @@ function Identity({ notify }) {
         <section className="panel">
           <PanelTitle title="User role manager" />
           <label>
-            User ID
-            <input
+            User
+            <select
               value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="UUID"
-            />
+              onChange={(e) => {
+                setUserId(e.target.value);
+                setUserRoles([]);
+                setRoleName("");
+              }}
+            >
+              <option value="">Select a user</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.displayName} · {user.email}
+                </option>
+              ))}
+            </select>
           </label>
           <button className="primary full" onClick={loadUser}>
             Load user roles

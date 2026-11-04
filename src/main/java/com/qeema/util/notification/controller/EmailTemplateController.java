@@ -43,13 +43,15 @@ public class EmailTemplateController {
 
     @PostMapping("/preview")
     @Operation(summary = "Preview an email template")
-    public PreviewEmailResponse preview(@Valid @RequestBody PreviewEmailRequest request, Authentication authentication) {
+    public PreviewEmailResponse preview(@Valid @RequestBody PreviewEmailRequest request,
+            Authentication authentication) {
         return templateService.preview(request.getTemplateName(), request.getVariables(), authentication);
     }
 
     @PostMapping
     @Operation(summary = "Create an email template")
-    public EmailTemplateResponse createTemplate(@Valid @RequestBody EmailTemplateRequest request, Authentication authentication) {
+    public EmailTemplateResponse createTemplate(@Valid @RequestBody EmailTemplateRequest request,
+            Authentication authentication) {
         return templateService.create(request, authentication);
     }
 
@@ -61,7 +63,8 @@ public class EmailTemplateController {
 
     @PutMapping("/{name}")
     @Operation(summary = "Update an email template")
-    public EmailTemplateResponse updateTemplate(@PathVariable String name, @Valid @RequestBody EmailTemplateRequest request, Authentication authentication) {
+    public EmailTemplateResponse updateTemplate(@PathVariable String name,
+            @Valid @RequestBody EmailTemplateRequest request, Authentication authentication) {
         return templateService.update(name, request, authentication);
     }
 

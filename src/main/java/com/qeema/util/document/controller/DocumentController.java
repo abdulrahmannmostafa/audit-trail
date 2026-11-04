@@ -43,7 +43,9 @@ public class DocumentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a document")
-    public DocumentResponse upload(@RequestParam @NotBlank String title, @RequestParam(required = false) String description, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
+    public DocumentResponse upload(@RequestParam @NotBlank String title,
+            @RequestParam(required = false) String description, @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
         return documentService.upload(new DocumentUploadRequest(title, description), file, jwt);
     }
 
@@ -81,7 +83,8 @@ public class DocumentController {
 
     @PostMapping(value = "/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a new document version")
-    public DocumentVersionResponse uploadVersion(@PathVariable String id, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
+    public DocumentVersionResponse uploadVersion(@PathVariable String id, @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
         return documentService.uploadVersion(id, file, jwt);
     }
 

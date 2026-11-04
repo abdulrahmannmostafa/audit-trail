@@ -8,9 +8,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "document_permissions")
+@Getter
+@Setter
 public class DocumentPermission {
 
     @Id
@@ -37,6 +41,7 @@ public class DocumentPermission {
 
     @PrePersist
     void assignId() {
-        if (id == null) id = UUID.randomUUID().toString();
+        if (id == null)
+            id = UUID.randomUUID().toString();
     }
 }

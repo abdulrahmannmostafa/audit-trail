@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.qeema.util.identity.dto.RoleResponse;
+import com.qeema.util.identity.dto.UserResponse;
 import com.qeema.util.identity.service.UserRoleService;
 
 @RestController
@@ -22,6 +23,11 @@ public class AdminRoleController {
     @GetMapping("/roles")
     public List<RoleResponse> getRoles(Authentication authentication) {
         return userRoleService.getRoles(authentication);
+    }
+
+    @GetMapping("/users")
+    public List<UserResponse> getUsers() {
+        return userRoleService.getUsers();
     }
 
     @GetMapping("/users/{userId}/roles")

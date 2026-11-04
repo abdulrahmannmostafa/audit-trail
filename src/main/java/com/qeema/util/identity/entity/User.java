@@ -9,6 +9,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 interface Status {
     String ACTIVE = "ACTIVE";
@@ -17,6 +19,8 @@ interface Status {
 
 @Entity
 @Table(name = "user")
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -57,56 +61,10 @@ public class User {
         this.avatarUrl = avatarUrl.orElse(null);
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
     @Override
     public String toString() {
-        return "User{" + "id='" + id + '\'' + ", email='" + email + '\'' + ", displayName='" + displayName + '\'' + ", avatarUrl='" + avatarUrl + '\'' + ", status='" + status + '\'' + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
+        return "User{" + "id='" + id + '\'' + ", email='" + email + '\'' + ", displayName='" + displayName + '\''
+                + ", avatarUrl='" + avatarUrl + '\'' + ", status='" + status + '\'' + ", createdAt=" + createdAt
+                + ", updatedAt=" + updatedAt + '}';
     }
 }

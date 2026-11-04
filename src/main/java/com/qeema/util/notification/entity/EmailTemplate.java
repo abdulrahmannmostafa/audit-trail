@@ -10,9 +10,13 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "email_template")
+@Getter
+@Setter
 public class EmailTemplate {
 
     @Id
@@ -45,54 +49,6 @@ public class EmailTemplate {
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSubjectTemplate() {
-        return subjectTemplate;
-    }
-
-    public void setSubjectTemplate(String subjectTemplate) {
-        this.subjectTemplate = subjectTemplate;
-    }
-
-    public String getHtmlContent() {
-        return htmlContent;
-    }
-
-    public void setHtmlContent(String htmlContent) {
-        this.htmlContent = htmlContent;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
     public EmailTemplate() {
     }
 
@@ -105,6 +61,8 @@ public class EmailTemplate {
 
     @Override
     public String toString() {
-        return "EmailTemplate{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", subjectTemplate='" + subjectTemplate + '\'' + ", htmlContent='" + htmlContent + '\'' + ", enabled=" + enabled + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
+        return "EmailTemplate{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", subjectTemplate='"
+                + subjectTemplate + '\'' + ", htmlContent='" + htmlContent + '\'' + ", enabled=" + enabled
+                + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
     }
 }

@@ -56,8 +56,10 @@ export async function getAccessToken() {
 }
 
 export function getUserProfile() {
+  const roles = keycloak.tokenParsed?.realm_access?.roles || [];
   return {
     username: keycloak.tokenParsed?.preferred_username || "Administrator",
-    name: keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || "Administrator"
+    name: keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || "Administrator",
+    isAdmin: roles.includes("ADMIN") || roles.includes("admin"),
   };
 }

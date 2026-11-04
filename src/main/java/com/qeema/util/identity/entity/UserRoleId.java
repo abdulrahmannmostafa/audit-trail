@@ -5,8 +5,12 @@ import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 @Embeddable
+@Getter
+@Setter
 public class UserRoleId implements Serializable {
 
     @Column(name = "user_id", length = 36, nullable = false)
@@ -23,26 +27,12 @@ public class UserRoleId implements Serializable {
         this.roleId = roleId;
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public Integer getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Integer roleId) {
-        this.roleId = roleId;
-    }
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserRoleId that)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof UserRoleId that))
+            return false;
         return Objects.equals(userId, that.userId) && Objects.equals(roleId, that.roleId);
     }
 

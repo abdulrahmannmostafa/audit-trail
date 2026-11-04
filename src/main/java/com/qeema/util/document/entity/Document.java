@@ -8,9 +8,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "documents")
+@Getter
+@Setter
 public class Document {
 
     @Id
@@ -55,46 +59,6 @@ public class Document {
         this.title = title;
         this.description = description;
         this.ownerId = ownerId;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getOwnerId() {
-        return ownerId;
-    }
-
-    public String getCurrentVersionId() {
-        return currentVersionId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setCurrentVersionId(String currentVersionId) {
-        this.currentVersionId = currentVersionId;
     }
 
     public void softDelete() {

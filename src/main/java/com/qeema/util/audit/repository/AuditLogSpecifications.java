@@ -28,7 +28,8 @@ public final class AuditLogSpecifications {
     }
 
     public static Specification<AuditLog> occurredFrom(Instant from) {
-        return (root, query, builder) -> from == null ? null : builder.greaterThanOrEqualTo(root.get("occurredAt"), from);
+        return (root, query, builder) -> from == null ? null
+                : builder.greaterThanOrEqualTo(root.get("occurredAt"), from);
     }
 
     public static Specification<AuditLog> occurredBefore(Instant to) {

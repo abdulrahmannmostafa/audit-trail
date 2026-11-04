@@ -14,9 +14,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "audit_log")
+@Getter
+@Setter
 public class AuditLog {
 
     @Id
@@ -90,55 +94,4 @@ public class AuditLog {
         return new AuditLog(event);
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public Instant getOccurredAt() {
-        return occurredAt;
-    }
-
-    public String getActorId() {
-        return actorId;
-    }
-
-    public String getActorUsername() {
-        return actorUsername;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public String getEntityType() {
-        return entityType;
-    }
-
-    public String getEntityId() {
-        return entityId;
-    }
-
-    public String getOutcome() {
-        return outcome;
-    }
-
-    public Map<String, Object> getOldValues() {
-        return oldValues;
-    }
-
-    public Map<String, Object> getNewValues() {
-        return newValues;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return metadata;
-    }
-
-    public Instant getConsumedAt() {
-        return consumedAt;
-    }
 }

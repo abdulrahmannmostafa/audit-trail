@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 public class PreviewEmailRequest {
     @NotBlank(message = "Template name must not be blank")
     private String templateName;
+
     private Map<String, Object> variables;
 }

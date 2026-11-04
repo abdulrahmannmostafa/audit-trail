@@ -12,9 +12,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Table(name = "user_role", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"}))
+@Table(name = "user_role", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "role_id" }))
+@Getter
+@Setter
 public class UserRole {
 
     @Id
@@ -41,38 +45,6 @@ public class UserRole {
         this.role = role;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public AppRole getRole() {
-        return role;
-    }
-
-    public void setRole(AppRole role) {
-        this.role = role;
-    }
-
-    public Instant getAssignedAt() {
-        return assignedAt;
-    }
-
-    public void setAssignedAt(Instant assignedAt) {
-        this.assignedAt = assignedAt;
-    }
-
     public UserRole(User user, AppRole role, Instant assignedAt) {
         this.user = user;
         this.role = role;
@@ -81,6 +53,7 @@ public class UserRole {
 
     @Override
     public String toString() {
-        return "UserRole{" + "id=" + id + ", user=" + (user != null ? user.getId() : null) + ", role=" + (role != null ? role.getId() : null) + ", assignedAt=" + assignedAt + '}';
+        return "UserRole{" + "id=" + id + ", user=" + (user != null ? user.getId() : null) + ", role="
+                + (role != null ? role.getId() : null) + ", assignedAt=" + assignedAt + '}';
     }
 }

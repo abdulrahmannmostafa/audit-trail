@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 public class DocumentUploadRequest {
     @NotBlank(message = "Title must not be blank")
     private String title;
+
     private String description;
 }
