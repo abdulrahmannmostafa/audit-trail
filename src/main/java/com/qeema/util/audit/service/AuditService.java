@@ -10,23 +10,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.WebRequest;
+import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.audit.messaging.AuditEvent;
-import com.qeema.util.audit.messaging.AuditEventProducer;
+import com.qeema.util.audit.messaging.AuditEventPublisher;
+import com.qeema.util.audit.constants.AuditConstants;
 
 @Service
+@RequiredArgsConstructor
 public class AuditService {
 
-        private static final String FAILED_REQUEST_NAME = "REQUEST_FAILED";
-        private static final String FAILED_REQUEST_ENTITY = "HTTP_REQUEST";
-        private static final String FAILED_REQUEST_OUTCOME = "FAILURE";
-
-        private final AuditEventProducer producer;
+        private final AuditEventPublisher producer;
         private static final org.slf4j.Logger logger = LoggerFactory.getLogger(AuditService.class);
-
-        public AuditService(AuditEventProducer producer) {
-                this.producer = producer;
-        }
 
         // I use authentication to get the actorId and username for the audit event
         // If authentication is null, I use "system" as the actorId and username this
@@ -84,10 +79,10 @@ public class AuditService {
                         String path = request.getDescription(false);
                         record(
                                         SecurityContextHolder.getContext().getAuthentication(),
-                                        FAILED_REQUEST_NAME,
-                                        FAILED_REQUEST_ENTITY,
+                                        AuditConstants.REQUEST_FAILED,
+                                        AuditConstants.HTTP_REQUEST,
                                         truncate(path, 100),
-                                        FAILED_REQUEST_OUTCOME,
+                                        AuditConstants.FAILURE,
                                         Map.of(),
                                         // I truncate the errorType to 100 characters to avoid exceeding the database
                                         // column length
@@ -105,6 +100,7 @@ public class AuditService {
         private String[] actor(Authentication authentication) {
                 if (authentication instanceof JwtAuthenticationToken jwtAuth) {
                         String actorId = jwtAuth.getToken().getSubject();
+
                         if (actorId == null || actorId.isBlank()) {
                                 throw new IllegalArgumentException(
                                                 "Authenticated JWT has no subject claim");
@@ -126,6 +122,7 @@ public class AuditService {
                                 && !authentication.getName().isBlank()) {
                         return new String[] { authentication.getName(), authentication.getName() };
                 }
+
                 return new String[] { "system", "system" };
         }
 

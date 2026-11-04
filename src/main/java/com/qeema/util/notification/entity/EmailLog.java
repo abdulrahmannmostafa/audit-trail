@@ -14,6 +14,8 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 interface Status {
     String PENDING = "PENDING";
@@ -28,6 +30,8 @@ interface Status {
 
 @Entity
 @Table(name = "email_log")
+@Getter
+@Setter
 public class EmailLog {
 
     @Id
@@ -75,82 +79,6 @@ public class EmailLog {
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public EmailTemplate getTemplate() {
-        return template;
-    }
-
-    public void setTemplate(EmailTemplate template) {
-        this.template = template;
-    }
-
-    public List<String> getRecipientTo() {
-        return recipientTo;
-    }
-
-    public void setRecipientTo(List<String> recipientTo) {
-        this.recipientTo = recipientTo;
-    }
-
-    public List<String> getRecipientCc() {
-        return recipientCc;
-    }
-
-    public void setRecipientCc(List<String> recipientCc) {
-        this.recipientCc = recipientCc;
-    }
-
-    public List<String> getRecipientBcc() {
-        return recipientBcc;
-    }
-
-    public void setRecipientBcc(List<String> recipientBcc) {
-        this.recipientBcc = recipientBcc;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getSentAt() {
-        return sentAt;
-    }
-
-    public void setSentAt(Instant sentAt) {
-        this.sentAt = sentAt;
-    }
-
     public EmailLog() {
     }
 
@@ -165,17 +93,9 @@ public class EmailLog {
 
     @Override
     public String toString() {
-        return "EmailLog{" +
-                "id='" + id + '\'' +
-                ", template=" + (template != null ? template.getId() : null) +
-                ", recipientTo=" + recipientTo +
-                ", recipientCc=" + recipientCc +
-                ", recipientBcc=" + recipientBcc +
-                ", subject='" + subject + '\'' +
-                ", status='" + status + '\'' +
-                ", errorMessage='" + errorMessage + '\'' +
-                ", createdAt=" + createdAt +
-                ", sentAt=" + sentAt +
-                '}';
+        return "EmailLog{" + "id='" + id + '\'' + ", template=" + (template != null ? template.getId() : null)
+                + ", recipientTo=" + recipientTo + ", recipientCc=" + recipientCc + ", recipientBcc=" + recipientBcc
+                + ", subject='" + subject + '\'' + ", status='" + status + '\'' + ", errorMessage='" + errorMessage
+                + '\'' + ", createdAt=" + createdAt + ", sentAt=" + sentAt + '}';
     }
 }

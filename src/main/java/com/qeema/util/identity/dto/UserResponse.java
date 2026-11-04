@@ -1,8 +1,15 @@
 package com.qeema.util.identity.dto;
 
-public record UserResponse(
-                String id,
-                String email,
-                String displayName,
-                String status) {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserResponse {
+    private String id;
+    private String email;
+    private String displayName;
+    private String status;
 }

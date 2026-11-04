@@ -3,9 +3,11 @@ server:
 
 app:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  mail:
+    from: ${MAIL_FROM:no-reply@example.com}
   documents:
     max-size-bytes: ${DOCUMENT_MAX_SIZE_BYTES:52428800}
-    allowed-content-types: ${DOCUMENT_ALLOWED_CONTENT_TYPES:application/pdf,text/plain,image/png,image/jpeg,image/webp,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet}
+    allowed-content-types: ${DOCUMENT_ALLOWED_CONTENT_TYPES:application/pdf,text/plain,image/png,image/jpeg}
   storage:
     silo:
       endpoint: http://localhost:9100
@@ -17,15 +19,18 @@ app:
 spring:
   application:
     name: util
+  main:
+    banner-mode: off
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/demo}
+  devtools:
+    restart:
+      enabled: false
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3307/demo_db}
+    # Docker's One
+    # url: ${DB_URL:jdbc:mysql://localhost:3307/demo_db}
+    # Local's One
+    url: ${DB_URL:jdbc:mysql://localhost:3306/util}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:local-db-password}
 
@@ -47,7 +52,7 @@ spring:
         "[spring.json.value.default.type]": "com.qeema.util.audit.messaging.AuditEvent"
 
   mail:
-    host: ${MAIL_HOST}
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
@@ -66,16 +71,35 @@ spring:
 
   flyway:
     enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      probes:
-        enabled: true
-  info:
-    env:
-      enabled: true
+  data:
+    rest:
+      base-path: /api
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/demo
+
+logging:
+  level:
+    root: WARN
+    org:
+      hibernate:
+        SQL: TRACE
+        orm:
+          jdbc:
+            bind: TRACE
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    filter: true

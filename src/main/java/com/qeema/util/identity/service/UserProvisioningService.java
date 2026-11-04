@@ -1,9 +1,7 @@
-
 package com.qeema.util.identity.service;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -11,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.common.exception.InvalidIdentityTokenException;
 import com.qeema.util.audit.service.AuditService;
@@ -19,34 +18,19 @@ import com.qeema.util.identity.entity.User;
 import com.qeema.util.identity.entity.UserIdentity;
 import com.qeema.util.identity.repository.UserIdentityRepository;
 import com.qeema.util.identity.repository.UserRepository;
+import com.qeema.util.common.security.RoleNames;
+import com.qeema.util.identity.constants.IdentityConstants;
+import com.qeema.util.identity.mapper.UserMapper;
 
 @Service
+@RequiredArgsConstructor
 public class UserProvisioningService {
 
     private final UserRepository userRepository;
     private final UserIdentityRepository identityRepository;
     private final UserRoleService userRoleService;
     private final AuditService auditService;
-
-    private final String USER_ROLE = "USER";
-    private final String ADMIN_ROLE = "ADMIN";
-
-    private final String USER_SUCCESS_ACTION = "SUCCESS";
-
-    private final String USER_ENTITY_TYPE = "USER";
-
-    private final String IDENTITY_PROVIDER = "keycloak";
-
-    public UserProvisioningService(
-            UserRepository userRepository,
-            UserIdentityRepository identityRepository,
-            UserRoleService userRoleService,
-            AuditService auditService) {
-        this.userRepository = userRepository;
-        this.identityRepository = identityRepository;
-        this.userRoleService = userRoleService;
-        this.auditService = auditService;
-    }
+    private final UserMapper userMapper;
 
     private List<String> extractKeycloakRoles(Jwt jwt) {
         final String REALM_ACCESS_NAME = "realm_access";
@@ -64,44 +48,30 @@ public class UserProvisioningService {
             return List.of();
         }
 
-        return roles.stream()
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .map(role -> role.trim().toUpperCase(Locale.ROOT))
-                .filter(role -> !role.isBlank())
-                .distinct()
-                .toList();
+        return roles.stream().filter(String.class::isInstance).map(String.class::cast).map(RoleNames::normalize)
+                .filter(role -> !role.isBlank()).distinct().toList();
     }
 
     @Transactional
     public UserResponse provision(Jwt jwt) {
-        final String USER_VIEWED_ACTION = "USER_VIEWED";
-        final String CURRENT_USER_OPERATION = "current-user";
-
         String issuer = jwt.getIssuer().toString();
         String subject = jwt.getSubject();
 
-        Optional<UserIdentity> existingIdentity = identityRepository
-                .findByIssuerAndSubjectWithUser(issuer, subject);
+        Optional<UserIdentity> existingIdentity = identityRepository.findByIssuerAndSubjectWithUser(issuer, subject);
 
         if (existingIdentity.isPresent()) {
-            auditService.record(
-                    new JwtAuthenticationToken(jwt),
-                    USER_VIEWED_ACTION,
-                    USER_ENTITY_TYPE,
-                    existingIdentity.get().getUser().getId(),
-                    USER_SUCCESS_ACTION,
-                    Map.of("operation", CURRENT_USER_OPERATION));
+            auditService.record(new JwtAuthenticationToken(jwt), "USER_VIEWED", IdentityConstants.USER_ENTITY,
+                    existingIdentity.get().getUser().getId(), IdentityConstants.SUCCESS,
+                    Map.of("operation", "current-user"));
+
             return toResponse(existingIdentity.get().getUser());
         }
 
         return toResponse(createUser(jwt, issuer, subject));
     }
 
-    private User createUser(
-            Jwt jwt, String issuer, String subject) {
+    private User createUser(Jwt jwt, String issuer, String subject) {
 
-        final String USER_CREATED_ACTION = "USER_CREATED";
         final String EMAIL_CLAIM_NAME = "email";
         final String NAME_CLAIM_NAME = "name";
 
@@ -110,49 +80,37 @@ public class UserProvisioningService {
 
         if (email == null || email.isBlank()) {
             throw new InvalidIdentityTokenException(
-                    "The validated token has no email claim. "
-                            + "Configure the email claim in Keycloak");
+                    "The validated token has no email claim. " + "Configure the email claim in Keycloak");
         }
 
         if (displayName == null || displayName.isBlank()) {
             displayName = email;
         }
 
-        User user = userRepository.saveAndFlush(
-                new User(email, displayName, Optional.empty()));
+        User user = userRepository.saveAndFlush(new User(email, displayName, Optional.empty()));
 
-        UserIdentity identity = new UserIdentity(
-                user, IDENTITY_PROVIDER, issuer, subject);
+        UserIdentity identity = new UserIdentity(user, IdentityConstants.KEYCLOAK, issuer, subject);
 
         identityRepository.saveAndFlush(identity);
 
         List<String> keycloakRoles = extractKeycloakRoles(jwt);
+
         JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
 
         for (String role : keycloakRoles) {
-            if (role.equals(USER_ROLE) || role.equals(ADMIN_ROLE)) {
+            if (role.equals(IdentityConstants.USER) || role.equals(IdentityConstants.ADMIN)) {
                 userRoleService.assignRole(user.getId(), role, authentication);
             }
         }
 
-        auditService.record(
-                authentication,
-                USER_CREATED_ACTION,
-                USER_ENTITY_TYPE,
-                user.getId(),
-                USER_SUCCESS_ACTION,
-                Map.of(),
-                Map.of("displayName", user.getDisplayName()),
-                Map.of("identityProvider", IDENTITY_PROVIDER));
+        auditService.record(authentication, "USER_CREATED", IdentityConstants.USER_ENTITY, user.getId(),
+                IdentityConstants.SUCCESS, Map.of(), Map.of("displayName", user.getDisplayName()),
+                Map.of("identityProvider", IdentityConstants.KEYCLOAK));
 
         return user;
     }
 
     private UserResponse toResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getStatus());
+        return userMapper.toResponse(user);
     }
 }

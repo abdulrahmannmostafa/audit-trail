@@ -12,9 +12,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "document_audit_logs")
+@Getter
+@Setter
 public class DocumentAuditLog {
 
     @Id
@@ -49,11 +53,7 @@ public class DocumentAuditLog {
     protected DocumentAuditLog() {
     }
 
-    public DocumentAuditLog(
-            String documentId,
-            String versionId,
-            String actorId,
-            String action,
+    public DocumentAuditLog(String documentId, String versionId, String actorId, String action,
             Map<String, Object> details) {
         this.documentId = documentId;
         this.versionId = versionId;

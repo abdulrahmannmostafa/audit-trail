@@ -108,9 +108,9 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(AccessDeniedException.class)
         public ResponseEntity<ApiError> handleAccessDenied(
-                AccessDeniedException exception,
-                WebRequest request) {
-            return auditedResponse(
+                        AccessDeniedException exception,
+                        WebRequest request) {
+                return auditedResponse(
                                 HttpStatus.FORBIDDEN,
                                 "You are not authorized to access this resource",
                                 request,
@@ -120,10 +120,10 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(DocumentStorageException.class)
         public ResponseEntity<ApiError> handleDocumentStorage(
-                DocumentStorageException exception,
-                WebRequest request) {
-            logger.error("Document storage operation failed", exception);
-            return auditedResponse(
+                        DocumentStorageException exception,
+                        WebRequest request) {
+                logger.error("Document storage operation failed", exception);
+                return auditedResponse(
                                 HttpStatus.BAD_GATEWAY,
                                 "Document storage is currently unavailable",
                                 request,
@@ -133,9 +133,9 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(EmailSendingException.class)
         public ResponseEntity<ApiError> handleEmailSending(
-                EmailSendingException exception,
-                WebRequest request) {
-            return auditedResponse(
+                        EmailSendingException exception,
+                        WebRequest request) {
+                return auditedResponse(
                                 HttpStatus.BAD_GATEWAY,
                                 "The email provider could not accept the message",
                                 request,

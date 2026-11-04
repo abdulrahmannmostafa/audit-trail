@@ -13,6 +13,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.common.exception.EmailSendingException;
 import com.qeema.util.audit.service.AuditService;
@@ -21,148 +22,105 @@ import com.qeema.util.notification.dto.SendEmailResponse;
 import com.qeema.util.notification.entity.EmailLog;
 import com.qeema.util.notification.entity.EmailTemplate;
 import com.qeema.util.notification.repository.EmailLogRepository;
+import com.qeema.util.notification.constants.NotificationConstants;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    private final String EMAIL_SENT_ACTION = "EMAIL_SENT";
-    private final String EMAIL_ENTITY_TYPE = "EMAIL";
-
-    private final String EMAIL_SUCCESS_ACTION = "SUCCESS";
-    private final String EMAIL_FAILURE_ACTION = "FAILURE";
-
-    private final String PENDING_STATUS = "PENDING";
-    private final String SENT_STATUS = "SENT";
-    private final String FAILED_STATUS = "FAILED";
-
     private final JavaMailSender mailSender;
     private final EmailLogRepository logRepository;
-    private final EmailTemplateService templateService;
+    private final EmailTemplateUseCase templateService;
     private final EmailTemplateRenderer renderer;
-    private final String fromAddress;
+
+    @Value("${app.mail.from:no-reply@example.com}")
+    private String fromAddress;
+
     private final AuditService auditService;
 
-    public EmailService(
-            JavaMailSender mailSender,
-            EmailLogRepository logRepository,
-            EmailTemplateService templateService,
-            EmailTemplateRenderer renderer,
-            AuditService auditService,
-            @Value("${app.mail.from:no-reply@example.com}") String fromAddress) {
-        this.mailSender = mailSender;
-        this.logRepository = logRepository;
-        this.templateService = templateService;
-        this.renderer = renderer;
-        this.auditService = auditService;
-        this.fromAddress = fromAddress;
-    }
-
-    public SendEmailResponse sendEmail(
-            SendEmailRequest request,
-            Authentication authentication) {
-
-        final String PLAIN_TEXT_TEMPLATE = "plain-text";
+    public SendEmailResponse sendEmail(SendEmailRequest request, Authentication authentication) {
 
         validate(request);
 
         // Resolve the template if provided
-        EmailTemplate template = resolveTemplate(request.templateName());
+        EmailTemplate template = resolveTemplate(request.getTemplateName());
 
         // Prepare the variables for rendering
-        Map<String, Object> variables = request.variables() == null
-                ? Map.of()
-                : request.variables();
+        Map<String, Object> variables = request.getVariables() == null ? Map.of() : request.getVariables();
 
         // Render subject and body based on the template or use provided values
-        String subject = template == null
-                ? request.subject()
-                : renderer.renderSubject(
-                        template.getSubjectTemplate(), variables);
+        String subject = template == null ? request.getSubject()
+                : renderer.renderSubject(template.getSubjectTemplate(), variables);
 
         // Render the body based on the template or use provided value
-        String body = template == null
-                ? request.body()
-                : renderer.renderHtml(template.getHtmlContent(), variables);
+        String body = template == null ? request.getBody() : renderer.renderHtml(template.getHtmlContent(), variables);
 
         // Mask the body if the template is used and the body is empty
         boolean html = template != null;
 
-        EmailLog log = logRepository.save(new EmailLog(
-                template,
-                List.copyOf(request.to()),
-                copyRecipients(request.cc()),
-                copyRecipients(request.bcc()),
-                subject));
+        EmailLog log = logRepository.save(new EmailLog(template, List.copyOf(request.getTo()),
+                copyRecipients(request.getCc()), copyRecipients(request.getBcc()), subject));
 
         try {
             sendMessage(request, subject, body, html);
-            log.setStatus(SENT_STATUS);
-            log.setSentAt(Instant.now());
-            logRepository.save(log);
-            auditService.record(
-                    authentication,
-                    EMAIL_SENT_ACTION,
-                    EMAIL_ENTITY_TYPE,
-                    log.getId(),
-                    EMAIL_SUCCESS_ACTION,
-                    Map.of("status", PENDING_STATUS),
-                    Map.of("status", SENT_STATUS),
-                    Map.of(
-                            "recipientCount", request.to().size(),
-                            "template", template == null
-                                    ? PLAIN_TEXT_TEMPLATE
-                                    : template.getName()));
 
-            return new SendEmailResponse(log.getId(), SENT_STATUS, subject);
+            log.setStatus(NotificationConstants.SENT);
+
+            log.setSentAt(Instant.now());
+
+            logRepository.save(log);
+
+            auditService.record(authentication, NotificationConstants.EMAIL_SENT, NotificationConstants.EMAIL,
+                    log.getId(), NotificationConstants.SUCCESS,
+                    Map.of("status", NotificationConstants.PENDING), Map.of("status", NotificationConstants.SENT),
+                    Map.of("recipientCount", request.getTo().size(), "template",
+                            template == null ? NotificationConstants.PLAIN_TEXT : template.getName()));
+
+            return new SendEmailResponse(log.getId(), NotificationConstants.SENT, subject);
         } catch (MessagingException | MailException exception) {
+
             markFailed(log, exception);
             try {
-                auditService.record(
-                        authentication,
-                        EMAIL_SENT_ACTION,
-                        EMAIL_ENTITY_TYPE,
+
+                auditService.record(authentication, NotificationConstants.EMAIL_SENT, NotificationConstants.EMAIL,
                         log.getId(),
-                        EMAIL_FAILURE_ACTION,
-                        Map.of("status", PENDING_STATUS),
-                        Map.of("status", FAILED_STATUS),
+                        NotificationConstants.FAILURE, Map.of("status", NotificationConstants.PENDING),
+                        Map.of("status", NotificationConstants.FAILED),
                         Map.of("errorType", exception.getClass().getSimpleName()));
             } catch (RuntimeException auditException) {
-                logger.warn("Unable to record failed email audit event {}",
-                        log.getId(), auditException);
+                logger.warn("Unable to record failed email audit event {}", log.getId(), auditException);
             }
+
             throw new EmailSendingException("Failed to send email", exception);
         }
     }
 
-    private void sendMessage(
-            SendEmailRequest request,
-            String subject,
-            String body,
-            boolean html)
+    private void sendMessage(SendEmailRequest request, String subject, String body, boolean html)
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(
-                message,
-                false,
-                "UTF-8");
+        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
         helper.setFrom(fromAddress);
-        helper.setTo(request.to().toArray(String[]::new));
 
-        if (request.cc() != null && !request.cc().isEmpty()) {
-            helper.setCc(request.cc().toArray(String[]::new));
+        helper.setTo(request.getTo().toArray(String[]::new));
+
+        if (request.getCc() != null && !request.getCc().isEmpty()) {
+            helper.setCc(request.getCc().toArray(String[]::new));
         }
-        if (request.bcc() != null && !request.bcc().isEmpty()) {
-            helper.setBcc(request.bcc().toArray(String[]::new));
+
+        if (request.getBcc() != null && !request.getBcc().isEmpty()) {
+            helper.setBcc(request.getBcc().toArray(String[]::new));
         }
 
         helper.setSubject(subject);
+
         helper.setText(body, html);
+
         mailSender.send(message);
     }
 
@@ -170,6 +128,7 @@ public class EmailService {
         if (templateName == null || templateName.isBlank()) {
             return null;
         }
+
         return templateService.getEnabledTemplate(templateName);
     }
 
@@ -178,60 +137,46 @@ public class EmailService {
         final String CC_FIELD = "CC";
         final String BCC_FIELD = "BCC";
 
-        if (request == null || request.to() == null || request.to().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "At least one recipient is required");
+        if (request == null || request.getTo() == null || request.getTo().isEmpty()) {
+            throw new IllegalArgumentException("At least one recipient is required");
         }
 
-        validateRecipients(request.to(), TO_FIELD);
-        validateOptionalRecipients(request.cc(), CC_FIELD);
-        validateOptionalRecipients(request.bcc(), BCC_FIELD);
+        validateRecipients(request.getTo(), TO_FIELD);
+        validateOptionalRecipients(request.getCc(), CC_FIELD);
+        validateOptionalRecipients(request.getBcc(), BCC_FIELD);
 
-        boolean hasTemplate = request.templateName() != null
-                && !request.templateName().isBlank();
-        if (!hasTemplate
-                && (request.subject() == null || request.subject().isBlank()
-                        || request.body() == null
-                        || request.body().isBlank())) {
-            throw new IllegalArgumentException(
-                    "Subject and body are required when no template is used");
+        boolean hasTemplate = request.getTemplateName() != null && !request.getTemplateName().isBlank();
+        if (!hasTemplate && (request.getSubject() == null || request.getSubject().isBlank() || request.getBody() == null
+                || request.getBody().isBlank())) {
+            throw new IllegalArgumentException("Subject and body are required when no template is used");
         }
     }
 
-    private void validateOptionalRecipients(
-            List<String> recipients,
-            String field) {
+    private void validateOptionalRecipients(List<String> recipients, String field) {
         if (recipients != null && !recipients.isEmpty()) {
             validateRecipients(recipients, field);
         }
     }
 
-    private void validateRecipients(
-            List<String> recipients,
-            String field) {
-        if (recipients.stream().anyMatch(
-                email -> email == null || email.isBlank())) {
-            throw new IllegalArgumentException(
-                    field + " addresses must not be blank");
+    private void validateRecipients(List<String> recipients, String field) {
+        if (recipients.stream().anyMatch(email -> email == null || email.isBlank())) {
+            throw new IllegalArgumentException(field + " addresses must not be blank");
         }
     }
 
     private List<String> copyRecipients(List<String> recipients) {
-        return recipients == null || recipients.isEmpty()
-                ? null
-                : List.copyOf(recipients);
+        return recipients == null || recipients.isEmpty() ? null : List.copyOf(recipients);
     }
 
     private void markFailed(EmailLog log, Exception exception) {
-        log.setStatus(FAILED_STATUS);
+        log.setStatus(NotificationConstants.FAILED);
+
         log.setErrorMessage(exception.getMessage());
+
         try {
             logRepository.save(log);
         } catch (DataAccessException logException) {
-            logger.error(
-                    "Failed to persist email failure log {}",
-                    log.getId(),
-                    logException);
+            logger.error("Failed to persist email failure log {}", log.getId(), logException);
         }
         logger.error("Failed to send email log {}", log.getId(), exception);
     }

@@ -9,10 +9,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "document_versions", uniqueConstraints = @UniqueConstraint(name = "uq_document_version", columnNames = {
         "document_id", "version_number" }))
+@Getter
+@Setter
 public class DocumentVersion {
 
     @Id
@@ -56,15 +60,8 @@ public class DocumentVersion {
     protected DocumentVersion() {
     }
 
-    public DocumentVersion(
-            String documentId,
-            int versionNumber,
-            String storageKey,
-            String originalFilename,
-            String contentType,
-            long sizeBytes,
-            String checksumSha256,
-            String uploadedBy) {
+    public DocumentVersion(String documentId, int versionNumber, String storageKey, String originalFilename,
+            String contentType, long sizeBytes, String checksumSha256, String uploadedBy) {
         this.documentId = documentId;
         this.versionNumber = versionNumber;
         this.storageKey = storageKey;
@@ -75,43 +72,4 @@ public class DocumentVersion {
         this.uploadedBy = uploadedBy;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getDocumentId() {
-        return documentId;
-    }
-
-    public int getVersionNumber() {
-        return versionNumber;
-    }
-
-    public String getStorageKey() {
-        return storageKey;
-    }
-
-    public String getOriginalFilename() {
-        return originalFilename;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public long getSizeBytes() {
-        return sizeBytes;
-    }
-
-    public String getChecksumSha256() {
-        return checksumSha256;
-    }
-
-    public String getUploadedBy() {
-        return uploadedBy;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

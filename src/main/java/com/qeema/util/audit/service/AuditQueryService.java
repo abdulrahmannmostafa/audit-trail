@@ -7,22 +7,24 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
 
 import com.qeema.util.audit.entity.AuditLog;
 import com.qeema.util.audit.repository.AuditLogRepository;
+
+import static com.qeema.util.audit.repository.AuditLogSpecifications.*;
+
 import com.qeema.util.common.exception.ResourceNotFoundException;
+import com.qeema.util.common.security.AuthenticationIdentity;
+import com.qeema.util.audit.constants.AuditConstants;
+import org.springframework.security.access.AccessDeniedException;
+import lombok.RequiredArgsConstructor;
 
 @Service
-public class AuditQueryService {
-
-    private static final int MAX_PAGE_SIZE = 100;
-    private static final String DEFAULT_SORT_FIELD = "occurredAt";
+@RequiredArgsConstructor
+public class AuditQueryService implements AuditQueryUseCase {
 
     private final AuditLogRepository repository;
-
-    public AuditQueryService(AuditLogRepository repository) {
-        this.repository = repository;
-    }
 
     // Search for audit logs based on the provided parameters and return a paginated
     // result
@@ -36,22 +38,47 @@ public class AuditQueryService {
             Instant to,
             int page,
             int size) {
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+
+        if (page < 0 || size < 1 || size > AuditConstants.MAX_PAGE_SIZE) {
             throw new IllegalArgumentException(
                     "Page must be non-negative and size must be between 1 and 100");
         }
+
         if (from != null && to != null && !from.isBefore(to)) {
             throw new IllegalArgumentException("'from' must be before 'to'");
         }
-        return repository.search(
-                normalize(actorId),
-                normalize(action),
-                normalize(entityType),
-                normalize(entityId),
-                from,
-                to,
+
+        return repository.findAll(actorIs(normalize(actorId))
+                .and(actionIs(normalize(action)))
+                .and(entityTypeIs(normalize(entityType)))
+                .and(entityIdIs(normalize(entityId)))
+                .and(occurredFrom(from))
+                .and(occurredBefore(to)),
                 PageRequest.of(page, size,
-                        Sort.by(Sort.Direction.DESC, DEFAULT_SORT_FIELD)));
+                        Sort.by(Sort.Direction.DESC, AuditConstants.DEFAULT_SORT_FIELD)));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> searchFor(
+            Authentication authentication,
+            String actorId,
+            String action,
+            String entityType,
+            String entityId,
+            Instant from,
+            Instant to,
+            int page,
+            int size) {
+        String effectiveActor = actorId;
+
+        if (!AuthenticationIdentity.isAdmin(authentication)) {
+            effectiveActor = AuthenticationIdentity.subject(authentication);
+            if (effectiveActor == null || effectiveActor.isBlank()) {
+                throw new AccessDeniedException("Authenticated user has no audit subject");
+            }
+        }
+
+        return search(effectiveActor, action, entityType, entityId, from, to, page, size);
     }
 
     // Get an audit log by its event ID
@@ -60,6 +87,7 @@ public class AuditQueryService {
         if (eventId == null || eventId.isBlank()) {
             throw new IllegalArgumentException("Event ID must not be blank");
         }
+        
         return repository.findByEventId(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Audit event not found: " + eventId));
@@ -70,4 +98,5 @@ public class AuditQueryService {
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
+
 }

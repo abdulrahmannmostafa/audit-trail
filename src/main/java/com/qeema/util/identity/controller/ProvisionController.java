@@ -22,8 +22,7 @@ public class ProvisionController {
 
     private final UserProvisioningService provisioningService;
 
-    public ProvisionController(
-            UserProvisioningService provisioningService) {
+    public ProvisionController(UserProvisioningService provisioningService) {
         this.provisioningService = provisioningService;
     }
 
@@ -35,8 +34,7 @@ public class ProvisionController {
     }
 
     @GetMapping("/me")
-    public UserResponse currentUser(
-            @AuthenticationPrincipal Jwt jwt) {
+    public UserResponse currentUser(@AuthenticationPrincipal Jwt jwt) {
         return provisioningService.provision(jwt);
     }
 }

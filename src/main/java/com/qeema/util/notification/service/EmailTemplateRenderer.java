@@ -21,10 +21,7 @@ public class EmailTemplateRenderer {
         return render(template, variables, true);
     }
 
-    private String render(
-            String template,
-            Map<String, Object> variables,
-            boolean escapeHtml) {
+    private String render(String template, Map<String, Object> variables, boolean escapeHtml) {
         if (template == null) {
             throw new IllegalArgumentException("Template content must not be null");
         }
@@ -39,17 +36,14 @@ public class EmailTemplateRenderer {
             String name = matcher.group(1);
             Object value = safeVariables.get(name);
             if (value == null) {
-                throw new IllegalArgumentException(
-                        "Missing template variable: " + name);
+                throw new IllegalArgumentException("Missing template variable: " + name);
             }
 
             String replacement = String.valueOf(value);
             if (escapeHtml) {
                 replacement = escapeHtml(replacement);
             }
-            matcher.appendReplacement(
-                    result,
-                    Matcher.quoteReplacement(replacement));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
 
         matcher.appendTail(result);
@@ -57,11 +51,7 @@ public class EmailTemplateRenderer {
     }
 
     private String escapeHtml(String value) {
-        return value
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
                 .replace("'", "&#39;");
     }
 }

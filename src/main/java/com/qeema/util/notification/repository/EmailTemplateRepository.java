@@ -6,8 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.qeema.util.notification.entity.EmailTemplate;
 
-public interface EmailTemplateRepository
-        extends JpaRepository<EmailTemplate, String> {
+public interface EmailTemplateRepository extends JpaRepository<EmailTemplate, String> {
 
     Optional<EmailTemplate> findByName(String name);
 

@@ -12,9 +12,13 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "user_identity", uniqueConstraints = @UniqueConstraint(columnNames = { "issuer", "subject" }))
+@Getter
+@Setter
 public class UserIdentity {
 
     @Id
@@ -54,59 +58,10 @@ public class UserIdentity {
         this.subject = subject;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
-
-    public String getIssuer() {
-        return issuer;
-    }
-
-    public void setIssuer(String issuer) {
-        this.issuer = issuer;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
     @Override
     public String toString() {
-        return "UserIdentity{" +
-                "id='" + id + '\'' +
-                ", user=" + (user != null ? user.getId() : null) +
-                ", provider='" + provider + '\'' +
-                ", issuer='" + issuer + '\'' +
-                ", subject='" + subject + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+        return "UserIdentity{" + "id='" + id + '\'' + ", user=" + (user != null ? user.getId() : null) + ", provider='"
+                + provider + '\'' + ", issuer='" + issuer + '\'' + ", subject='" + subject + '\'' + ", createdAt="
+                + createdAt + '}';
     }
 }

@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.qeema.util.identity.entity.User;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * One row per message in an AI assistant conversation.
@@ -23,6 +25,8 @@ import com.qeema.util.identity.entity.User;
  */
 @Entity
 @Table(name = "assistant_chat")
+@Getter
+@Setter
 public class AssistantChat {
 
     @Id
@@ -57,55 +61,4 @@ public class AssistantChat {
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getConversationId() {
-        return conversationId;
-    }
-
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }
