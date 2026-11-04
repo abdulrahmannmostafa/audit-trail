@@ -14,35 +14,24 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import com.qeema.util.storage.utility.StorageUtility;
 
 @Service
 @RequiredArgsConstructor
 public class ObjectStorageService implements ObjectStorageGateway {
 
     private final S3Client s3Client;
+    private final StorageUtility storageUtility;
 
     @Value("${app.storage.silo.bucket}")
     private String bucket;
 
     public void upload(String key, InputStream inputStream, long contentLength, String contentType) {
 
-        ensureBucket();
+        storageUtility.ensureBucket(bucket);
         PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType).build();
 
         s3Client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
-    }
-
-    private void ensureBucket() {
-        final int ERROR_CODE = 404;
-
-        try {
-            s3Client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
-        } catch (S3Exception exception) {
-            if (exception.statusCode() != ERROR_CODE) {
-                throw exception;
-            }
-            s3Client.createBucket(builder -> builder.bucket(bucket));
-        }
     }
 
     public ResponseInputStream<GetObjectResponse> download(String key) {

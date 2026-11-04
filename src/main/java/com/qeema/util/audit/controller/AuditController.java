@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.audit.dto.AuditLogResponse;
 import com.qeema.util.audit.entity.AuditLog;
+import com.qeema.util.audit.annotation.Audited;
+import com.qeema.util.audit.constants.AuditConstants;
 import com.qeema.util.audit.mapper.AuditLogMapper;
 import com.qeema.util.audit.service.AuditQueryUseCase;
 
@@ -35,6 +37,7 @@ public class AuditController {
 
         @GetMapping
         @Operation(summary = "Search audit logs")
+        @Audited(action = AuditConstants.SEARCHED, entityType = AuditConstants.ENTITY_TYPE)
         @PreAuthorize("isAuthenticated()")
         public Page<AuditLogResponse> search(
                         @RequestParam(required = false) String actorId,
@@ -60,6 +63,7 @@ public class AuditController {
 
         @GetMapping("/{eventId}")
         @Operation(summary = "Get an audit event")
+        @Audited(action = AuditConstants.VIEWED, entityType = AuditConstants.ENTITY_TYPE)
         @PreAuthorize("hasRole('ADMIN') or @auditAuthorization.canReadEvent(authentication, #eventId)")
         public ResponseEntity<AuditLogResponse> get(
                         @PathVariable String eventId) {

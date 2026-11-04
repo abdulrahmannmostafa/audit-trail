@@ -19,12 +19,14 @@ import com.qeema.util.common.security.AuthenticationIdentityUtility;
 import com.qeema.util.audit.constants.AuditConstants;
 import org.springframework.security.access.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
+import com.qeema.util.audit.utility.AuditUtility;
 
 @Service
 @RequiredArgsConstructor
 public class AuditQueryService implements AuditQueryUseCase {
 
     private final AuditLogRepository repository;
+    private final AuditUtility auditUtility;
 
     // Search for audit logs based on the provided parameters and return a paginated
     // result
@@ -48,10 +50,10 @@ public class AuditQueryService implements AuditQueryUseCase {
             throw new IllegalArgumentException("'from' must be before 'to'");
         }
 
-        return repository.findAll(actorIs(normalize(actorId))
-                .and(actionIs(normalize(action)))
-                .and(entityTypeIs(normalize(entityType)))
-                .and(entityIdIs(normalize(entityId)))
+        return repository.findAll(actorIs(auditUtility.normalize(actorId))
+                .and(actionIs(auditUtility.normalize(action)))
+                .and(entityTypeIs(auditUtility.normalize(entityType)))
+                .and(entityIdIs(auditUtility.normalize(entityId)))
                 .and(occurredFrom(from))
                 .and(occurredBefore(to)),
                 PageRequest.of(page, size,
@@ -73,6 +75,7 @@ public class AuditQueryService implements AuditQueryUseCase {
 
         if (!AuthenticationIdentityUtility.isAdmin(authentication)) {
             effectiveActor = AuthenticationIdentityUtility.subject(authentication);
+
             if (effectiveActor == null || effectiveActor.isBlank()) {
                 throw new AccessDeniedException("Authenticated user has no audit subject");
             }
@@ -91,12 +94,6 @@ public class AuditQueryService implements AuditQueryUseCase {
         return repository.findByEventId(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Audit event not found: " + eventId));
-    }
-
-    // Normalize a string value by trimming whitespace and returning null if it is
-    // blank
-    private String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 
 }
