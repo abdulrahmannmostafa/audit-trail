@@ -53,7 +53,7 @@ public class AuditController {
                 Instant toInstant = to == null ? null
                                 : to.plusDays(1).atStartOfDay(zone).toInstant();
 
-                return queryService.searchFor(authentication, actorId, action, entityType, entityId,
+                return queryService.searchForAuditLogs(authentication, actorId, action, entityType, entityId,
                                 fromInstant, toInstant, page, size)
                                 .map(mapper::toResponse);
         }

@@ -75,7 +75,8 @@ public class EmailService {
 
             logRepository.save(log);
 
-            auditService.record(authentication, NotificationConstants.EMAIL_SENT, NotificationConstants.EMAIL,
+            auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.EMAIL_SENT,
+                    NotificationConstants.EMAIL,
                     log.getId(), NotificationConstants.SUCCESS,
                     Map.of("status", NotificationConstants.PENDING), Map.of("status", NotificationConstants.SENT),
                     Map.of("recipientCount", request.getTo().size(), "template",
@@ -87,7 +88,8 @@ public class EmailService {
             markFailed(log, exception);
             try {
 
-                auditService.record(authentication, NotificationConstants.EMAIL_SENT, NotificationConstants.EMAIL,
+                auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.EMAIL_SENT,
+                        NotificationConstants.EMAIL,
                         log.getId(),
                         NotificationConstants.FAILURE, Map.of("status", NotificationConstants.PENDING),
                         Map.of("status", NotificationConstants.FAILED),

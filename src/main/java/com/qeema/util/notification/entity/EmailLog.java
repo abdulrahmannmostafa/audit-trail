@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 interface Status {
     String PENDING = "PENDING";
@@ -32,6 +34,7 @@ interface Status {
 @Table(name = "email_log")
 @Getter
 @Setter
+@NoArgsConstructor
 public class EmailLog {
 
     @Id
@@ -79,9 +82,7 @@ public class EmailLog {
         }
     }
 
-    public EmailLog() {
-    }
-
+    @Builder
     public EmailLog(EmailTemplate template, List<String> recipientTo, List<String> recipientCc,
             List<String> recipientBcc, String subject) {
         this.template = template;

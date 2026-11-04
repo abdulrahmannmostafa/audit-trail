@@ -11,12 +11,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "document_versions", uniqueConstraints = @UniqueConstraint(name = "uq_document_version", columnNames = {
         "document_id", "version_number" }))
 @Getter
 @Setter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class DocumentVersion {
 
     @Id
@@ -57,9 +60,7 @@ public class DocumentVersion {
         }
     }
 
-    protected DocumentVersion() {
-    }
-
+    @Builder
     public DocumentVersion(String documentId, int versionNumber, String storageKey, String originalFilename,
             String contentType, long sizeBytes, String checksumSha256, String uploadedBy) {
         this.documentId = documentId;

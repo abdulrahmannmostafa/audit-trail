@@ -60,7 +60,8 @@ public class UserProvisioningService {
         Optional<UserIdentity> existingIdentity = identityRepository.findByIssuerAndSubjectWithUser(issuer, subject);
 
         if (existingIdentity.isPresent()) {
-            auditService.record(new JwtAuthenticationToken(jwt), "USER_VIEWED", IdentityConstants.USER_ENTITY,
+            auditService.recordAuditEvent(new JwtAuthenticationToken(jwt), "USER_VIEWED",
+                    IdentityConstants.USER_ENTITY,
                     existingIdentity.get().getUser().getId(), IdentityConstants.SUCCESS,
                     Map.of("operation", "current-user"));
 
@@ -103,7 +104,8 @@ public class UserProvisioningService {
             }
         }
 
-        auditService.record(authentication, "USER_CREATED", IdentityConstants.USER_ENTITY, user.getId(),
+        auditService.recordAuditEventWithSnapshots(authentication, "USER_CREATED", IdentityConstants.USER_ENTITY,
+                user.getId(),
                 IdentityConstants.SUCCESS, Map.of(), Map.of("displayName", user.getDisplayName()),
                 Map.of("identityProvider", IdentityConstants.KEYCLOAK));
 

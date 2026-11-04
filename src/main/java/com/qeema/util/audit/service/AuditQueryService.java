@@ -15,7 +15,7 @@ import com.qeema.util.audit.repository.AuditLogRepository;
 import static com.qeema.util.audit.repository.AuditLogSpecifications.*;
 
 import com.qeema.util.common.exception.ResourceNotFoundException;
-import com.qeema.util.common.security.AuthenticationIdentity;
+import com.qeema.util.common.security.AuthenticationIdentityUtility;
 import com.qeema.util.audit.constants.AuditConstants;
 import org.springframework.security.access.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class AuditQueryService implements AuditQueryUseCase {
     // Search for audit logs based on the provided parameters and return a paginated
     // result
     @Transactional(readOnly = true)
-    public Page<AuditLog> search(
+    public Page<AuditLog> searchAuditLogs(
             String actorId,
             String action,
             String entityType,
@@ -59,7 +59,7 @@ public class AuditQueryService implements AuditQueryUseCase {
     }
 
     @Transactional(readOnly = true)
-    public Page<AuditLog> searchFor(
+    public Page<AuditLog> searchForAuditLogs(
             Authentication authentication,
             String actorId,
             String action,
@@ -71,14 +71,14 @@ public class AuditQueryService implements AuditQueryUseCase {
             int size) {
         String effectiveActor = actorId;
 
-        if (!AuthenticationIdentity.isAdmin(authentication)) {
-            effectiveActor = AuthenticationIdentity.subject(authentication);
+        if (!AuthenticationIdentityUtility.isAdmin(authentication)) {
+            effectiveActor = AuthenticationIdentityUtility.subject(authentication);
             if (effectiveActor == null || effectiveActor.isBlank()) {
                 throw new AccessDeniedException("Authenticated user has no audit subject");
             }
         }
 
-        return search(effectiveActor, action, entityType, entityId, from, to, page, size);
+        return searchAuditLogs(effectiveActor, action, entityType, entityId, from, to, page, size);
     }
 
     // Get an audit log by its event ID
@@ -87,7 +87,7 @@ public class AuditQueryService implements AuditQueryUseCase {
         if (eventId == null || eventId.isBlank()) {
             throw new IllegalArgumentException("Event ID must not be blank");
         }
-        
+
         return repository.findByEventId(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Audit event not found: " + eventId));

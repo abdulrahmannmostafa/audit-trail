@@ -31,7 +31,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
     public List<EmailTemplateResponse> getTemplates(Authentication authentication) {
         List<EmailTemplateResponse> templates = templateRepository.findAll().stream().map(this::toResponse).toList();
 
-        auditService.record(authentication, NotificationConstants.TEMPLATES_LISTED,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATES_LISTED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.COLLECTION, NotificationConstants.SUCCESS, Map.of("count", templates.size()));
 
@@ -42,7 +42,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
     public PreviewEmailResponse preview(String name, Map<String, Object> variables, Authentication authentication) {
         EmailTemplate template = getEnabledTemplate(name);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_PREVIEWED,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATE_PREVIEWED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.PREVIEW, NotificationConstants.SUCCESS, Map.of("name", template.getName()));
 
@@ -56,7 +56,8 @@ public class EmailTemplateService implements EmailTemplateUseCase {
         EmailTemplateResponse response = toResponse(templateRepository.findByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Email template not found: " + name)));
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_VIEWED, NotificationConstants.EMAIL_TEMPLATE,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATE_VIEWED,
+                NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS, Map.of("name", response.getName()));
 
         return response;
@@ -75,7 +76,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
         EmailTemplate saved = templateRepository.save(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_CREATED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_CREATED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS, Map.of(),
                 Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
@@ -100,7 +101,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
         EmailTemplate saved = templateRepository.save(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_UPDATED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_UPDATED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS,
                 Map.of("name", template.getName(), "enabled", template.isEnabled()),
@@ -115,7 +116,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
         templateRepository.delete(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_DELETED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_DELETED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS,
                 Map.of("name", template.getName(), "enabled", template.isEnabled()), Map.of(),

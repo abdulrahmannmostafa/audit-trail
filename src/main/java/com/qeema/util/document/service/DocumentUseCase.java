@@ -11,15 +11,15 @@ import com.qeema.util.document.dto.DocumentUploadRequest;
 import com.qeema.util.document.dto.DocumentVersionResponse;
 
 public interface DocumentUseCase {
-    DocumentResponse upload(DocumentUploadRequest request, MultipartFile file, Jwt jwt);
+    DocumentResponse uploadDocument(DocumentUploadRequest request, MultipartFile file, Jwt jwt);
 
-    List<DocumentResponse> list(Jwt jwt);
+    List<DocumentResponse> listDocuments(Jwt jwt);
 
-    DocumentDownload download(String id, Jwt jwt);
+    DocumentDownload downloadDocument(String id, Jwt jwt);
 
-    List<DocumentVersionResponse> versions(String id, Jwt jwt);
+    List<DocumentVersionResponse> listDocumentVersions(String id, Jwt jwt);
 
     DocumentVersionResponse uploadVersion(String id, MultipartFile file, Jwt jwt);
 
-    void delete(String id, Jwt jwt);
+    void deleteDocument(String id, Jwt jwt);
 }

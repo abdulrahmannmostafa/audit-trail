@@ -60,7 +60,7 @@ public class DocumentService implements DocumentUseCase {
     private List<String> allowedContentTypes;
 
     @Transactional
-    public DocumentResponse upload(DocumentUploadRequest request, MultipartFile file, Jwt jwt) {
+    public DocumentResponse uploadDocument(DocumentUploadRequest request, MultipartFile file, Jwt jwt) {
 
         validateFile(file);
 
@@ -71,24 +71,26 @@ public class DocumentService implements DocumentUseCase {
 
         addVersion(document, file, actorId);
 
-        auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.UPLOADED, DocumentConstants.ENTITY_TYPE,
+        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.UPLOADED,
+                DocumentConstants.ENTITY_TYPE,
                 document.getId(),
                 DocumentConstants.SUCCESS, Map.of(),
-                Map.of("filename", safeFilename(file), "sizeBytes", file.getSize()),
-                Map.of("filename", safeFilename(file)));
+                Map.of("filename", getSafeFilename(file), "sizeBytes", file.getSize()),
+                Map.of("filename", getSafeFilename(file)));
 
-        audit(document, null, actorId, DocumentConstants.UPLOAD, Map.of("filename", safeFilename(file)));
+        auditDocument(document, null, actorId, DocumentConstants.UPLOAD, Map.of("filename", getSafeFilename(file)));
 
         return toResponse(document);
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentResponse> list(Jwt jwt) {
+    public List<DocumentResponse> listDocuments(Jwt jwt) {
 
         List<DocumentResponse> documents = documentRepository.findAccessible(actorId(jwt)).stream()
                 .map(this::toResponse).toList();
 
-        auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.LISTED, DocumentConstants.ENTITY_TYPE,
+        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.LISTED,
+                DocumentConstants.ENTITY_TYPE,
                 DocumentConstants.ENTITY_ID,
                 DocumentConstants.SUCCESS, Map.of(), Map.of("count", documents.size()),
                 Map.of("count", documents.size()));
@@ -97,16 +99,15 @@ public class DocumentService implements DocumentUseCase {
     }
 
     @Transactional
-    public DocumentDownload download(String id, Jwt jwt) {
-        Document document = accessibleDocument(id, jwt);
-        DocumentVersion version = currentVersion(document);
+    public DocumentDownload downloadDocument(String id, Jwt jwt) {
+        Document document = findAccessibleDocument(id, jwt);
+        DocumentVersion version = findCurrentVersionForDocument(document);
+
         try {
             DocumentDownload download = new DocumentDownload(storage.download(version.getStorageKey()),
                     version.getOriginalFilename(), version.getContentType(), version.getSizeBytes());
 
-            audit(document, version, actorId(jwt), DocumentConstants.DOWNLOAD, Map.of());
-
-            auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.DOWNLOADED,
+            auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.DOWNLOAD,
                     DocumentConstants.ENTITY_TYPE,
                     document.getId(), DocumentConstants.SUCCESS, Map.of(),
                     Map.of("version", version.getVersionNumber()),
@@ -119,14 +120,14 @@ public class DocumentService implements DocumentUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentVersionResponse> versions(String id, Jwt jwt) {
-        Document document = accessibleDocument(id, jwt);
+    public List<DocumentVersionResponse> listDocumentVersions(String id, Jwt jwt) {
+        Document document = findAccessibleDocument(id, jwt);
 
         List<DocumentVersionResponse> versions = versionRepository
                 .findByDocumentIdOrderByVersionNumberDesc(document.getId()).stream().map(this::toVersionResponse)
                 .toList();
 
-        auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.VERSIONS_VIEWED,
+        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.VERSIONS_VIEWED,
                 DocumentConstants.ENTITY_TYPE,
                 document.getId(), DocumentConstants.SUCCESS, Map.of(), Map.of("count", versions.size()),
                 Map.of("count", versions.size()));
@@ -139,7 +140,7 @@ public class DocumentService implements DocumentUseCase {
 
         validateFile(file);
 
-        Document document = accessibleDocument(id, jwt);
+        Document document = findAccessibleDocument(id, jwt);
 
         String actorId = actorId(jwt);
 
@@ -150,21 +151,20 @@ public class DocumentService implements DocumentUseCase {
         }
 
         DocumentVersion version = addVersion(document, file, actorId);
-
-        auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.VERSION_CREATED,
+        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.VERSION_CREATED,
                 DocumentConstants.ENTITY_TYPE,
                 document.getId(), DocumentConstants.SUCCESS, Map.of(), Map.of("version", version.getVersionNumber()),
                 Map.of("version", version.getVersionNumber()));
 
-        audit(document, version, actorId, DocumentConstants.EDIT,
-                Map.of("filename", safeFilename(file), "version", version.getVersionNumber()));
+        auditDocument(document, version, actorId, DocumentConstants.EDIT,
+                Map.of("filename", getSafeFilename(file), "version", version.getVersionNumber()));
 
         return toVersionResponse(version);
     }
 
     @Transactional
-    public void delete(String id, Jwt jwt) {
-        Document document = accessibleDocument(id, jwt);
+    public void deleteDocument(String id, Jwt jwt) {
+        Document document = findAccessibleDocument(id, jwt);
 
         String actorId = actorId(jwt);
 
@@ -176,9 +176,10 @@ public class DocumentService implements DocumentUseCase {
 
         documentRepository.save(document);
 
-        audit(document, null, actorId, DocumentConstants.DELETE, Map.of());
+        auditDocument(document, null, actorId, DocumentConstants.DELETE, Map.of());
 
-        auditService.record(new JwtAuthenticationToken(jwt), DocumentConstants.DELETED, DocumentConstants.ENTITY_TYPE,
+        auditService.recordAuditEventWithSnapshots(new JwtAuthenticationToken(jwt), DocumentConstants.DELETED,
+                DocumentConstants.ENTITY_TYPE,
                 document.getId(),
                 DocumentConstants.SUCCESS, Map.of("status", "ACTIVE"), Map.of("status", "DELETED"), Map.of());
     }
@@ -199,7 +200,7 @@ public class DocumentService implements DocumentUseCase {
 
             DigestInputStream digestInput = new java.security.DigestInputStream(input, digest);
 
-            storage.upload(storageKey, digestInput, file.getSize(), contentType(file));
+            storage.upload(storageKey, digestInput, file.getSize(), retrieveContentType(file));
 
             checksum = HexFormat.of().formatHex(digest.digest());
         } catch (IOException | NoSuchAlgorithmException exception) {
@@ -208,8 +209,8 @@ public class DocumentService implements DocumentUseCase {
             throw new DocumentStorageException("Unable to store document content", exception);
         }
 
-        DocumentVersion version = new DocumentVersion(document.getId(), nextVersion, storageKey, safeFilename(file),
-                contentType(file), file.getSize(), checksum, actorId);
+        DocumentVersion version = new DocumentVersion(document.getId(), nextVersion, storageKey, getSafeFilename(file),
+                retrieveContentType(file), file.getSize(), checksum, actorId);
 
         version = versionRepository.save(version);
 
@@ -220,12 +221,12 @@ public class DocumentService implements DocumentUseCase {
         return version;
     }
 
-    private Document accessibleDocument(String id, Jwt jwt) {
+    private Document findAccessibleDocument(String id, Jwt jwt) {
         return documentRepository.findAccessibleById(id, actorId(jwt))
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
     }
 
-    private DocumentVersion currentVersion(Document document) {
+    private DocumentVersion findCurrentVersionForDocument(Document document) {
         return versionRepository.findById(document.getCurrentVersionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Current document version not found"));
     }
@@ -238,7 +239,7 @@ public class DocumentService implements DocumentUseCase {
         return identity.getUser().getId();
     }
 
-    private void audit(Document document, DocumentVersion version, String actorId, String action,
+    private void auditDocument(Document document, DocumentVersion version, String actorId, String action,
             Map<String, Object> details) {
         auditRepository.save(new DocumentAuditLog(document.getId(), version == null ? null : version.getId(), actorId,
                 action, details));
@@ -261,7 +262,7 @@ public class DocumentService implements DocumentUseCase {
         }
     }
 
-    private String safeFilename(MultipartFile file) {
+    private String getSafeFilename(MultipartFile file) {
 
         final String DOCUMENT = "DOCUMENT";
 
@@ -273,7 +274,7 @@ public class DocumentService implements DocumentUseCase {
         return Paths.get(filename).getFileName().toString();
     }
 
-    private String contentType(MultipartFile file) {
+    private String retrieveContentType(MultipartFile file) {
         final String CONTENT_TYPE = "application/octet-stream";
 
         return file.getContentType() == null ? CONTENT_TYPE : file.getContentType();

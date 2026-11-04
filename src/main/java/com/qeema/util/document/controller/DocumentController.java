@@ -46,20 +46,20 @@ public class DocumentController {
     public DocumentResponse upload(@RequestParam @NotBlank String title,
             @RequestParam(required = false) String description, @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal Jwt jwt) {
-        return documentService.upload(new DocumentUploadRequest(title, description), file, jwt);
+        return documentService.uploadDocument(new DocumentUploadRequest(title, description), file, jwt);
     }
 
     @GetMapping
     @Operation(summary = "List accessible documents")
     public List<DocumentResponse> list(@AuthenticationPrincipal Jwt jwt) {
-        return documentService.list(jwt);
+        return documentService.listDocuments(jwt);
     }
 
     @GetMapping("/{id}/download")
     @Operation(summary = "Download the current document version")
     public ResponseEntity<InputStreamResource> download(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 
-        DocumentDownload download = documentService.download(id, jwt);
+        DocumentDownload download = documentService.downloadDocument(id, jwt);
 
         HttpHeaders headers = new HttpHeaders();
 
@@ -78,7 +78,7 @@ public class DocumentController {
     @GetMapping("/{id}/versions")
     @Operation(summary = "View document version history")
     public List<DocumentVersionResponse> versions(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        return documentService.versions(id, jwt);
+        return documentService.listDocumentVersions(id, jwt);
     }
 
     @PostMapping(value = "/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -91,7 +91,7 @@ public class DocumentController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft-delete a document")
     public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        documentService.delete(id, jwt);
+        documentService.deleteDocument(id, jwt);
         return ResponseEntity.noContent().build();
     }
 }

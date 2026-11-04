@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 interface Status {
     String ACTIVE = "ACTIVE";
@@ -21,6 +23,7 @@ interface Status {
 @Table(name = "user")
 @Getter
 @Setter
+@NoArgsConstructor
 public class User {
 
     @Id
@@ -52,9 +55,7 @@ public class User {
         }
     }
 
-    public User() {
-    }
-
+    @Builder
     public User(String email, String displayName, Optional<String> avatarUrl) {
         this.email = email;
         this.displayName = displayName;
