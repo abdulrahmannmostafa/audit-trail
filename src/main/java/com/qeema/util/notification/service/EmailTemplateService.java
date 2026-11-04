@@ -108,7 +108,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
                 Map.of("name", template.getName(), "enabled", template.isEnabled()),
                 Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
 
-        return templateUtility.response(saved);
+        return templateUtility.toResponse(saved);
     }
 
     @Transactional
