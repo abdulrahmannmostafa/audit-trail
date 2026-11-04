@@ -8,10 +8,10 @@ import org.springframework.security.core.Authentication;
 import com.qeema.util.audit.entity.AuditLog;
 
 public interface AuditQueryUseCase {
-        Page<AuditLog> search(String actorId, String action, String entityType,
+        Page<AuditLog> searchAuditLogs(String actorId, String action, String entityType,
                         String entityId, Instant from, Instant to, int page, int size);
 
-        Page<AuditLog> searchFor(Authentication authentication, String actorId,
+        Page<AuditLog> searchForAuditLogs(Authentication authentication, String actorId,
                         String action, String entityType, String entityId, Instant from,
                         Instant to, int page, int size);
 

@@ -53,7 +53,8 @@ public class UserRoleService {
         List<String> roles = userRoleRepository.findByUserId(userId).stream()
                 .map(userRole -> userRole.getRole().getName()).map(RoleNames::normalize).distinct().sorted().toList();
 
-        auditService.record(authentication, IdentityConstants.USER_ROLES_VIEWED, IdentityConstants.USER_ENTITY,
+        auditService.recordAuditEvent(authentication, IdentityConstants.USER_ROLES_VIEWED,
+                IdentityConstants.USER_ENTITY,
                 userId, IdentityConstants.SUCCESS,
                 Map.of("count", roles.size()));
 
@@ -70,7 +71,7 @@ public class UserRoleService {
         List<RoleResponse> roles = appRoleRepository.findAll().stream()
                 .map(roleMapper::toResponse).toList();
 
-        auditService.record(authentication, IdentityConstants.ROLES_LISTED, IdentityConstants.ROLE_ENTITY,
+        auditService.recordAuditEvent(authentication, IdentityConstants.ROLES_LISTED, IdentityConstants.ROLE_ENTITY,
                 IdentityConstants.COLLECTION, IdentityConstants.SUCCESS,
                 Map.of("count", roles.size()));
 
@@ -95,7 +96,8 @@ public class UserRoleService {
 
             userRoleRepository.save(new UserRole(user, role));
 
-            auditService.record(authentication, IdentityConstants.ROLE_ASSIGNED, IdentityConstants.USER_ENTITY,
+            auditService.recordAuditEventWithSnapshots(authentication, IdentityConstants.ROLE_ASSIGNED,
+                    IdentityConstants.USER_ENTITY,
                     userId, IdentityConstants.SUCCESS,
                     Map.of(), Map.of("role", normalizedName), Map.of("role", normalizedName));
         }
@@ -116,7 +118,8 @@ public class UserRoleService {
 
         userRoleRepository.deleteByUserIdAndRoleId(userId, role.getId().toString());
 
-        auditService.record(authentication, IdentityConstants.ROLE_REMOVED, IdentityConstants.USER_ENTITY,
+        auditService.recordAuditEventWithSnapshots(authentication, IdentityConstants.ROLE_REMOVED,
+                IdentityConstants.USER_ENTITY,
                 userId, IdentityConstants.SUCCESS,
                 Map.of("role", normalizedName), Map.of(), Map.of("role", normalizedName));
     }

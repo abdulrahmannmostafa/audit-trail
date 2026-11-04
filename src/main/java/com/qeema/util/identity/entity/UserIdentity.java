@@ -14,11 +14,14 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "user_identity", uniqueConstraints = @UniqueConstraint(columnNames = { "issuer", "subject" }))
 @Getter
 @Setter
+@NoArgsConstructor
 public class UserIdentity {
 
     @Id
@@ -48,9 +51,7 @@ public class UserIdentity {
         }
     }
 
-    public UserIdentity() {
-    }
-
+    @Builder
     public UserIdentity(User user, String provider, String issuer, String subject) {
         this.user = user;
         this.provider = provider;

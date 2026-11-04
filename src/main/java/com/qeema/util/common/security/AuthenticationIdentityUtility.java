@@ -3,9 +3,9 @@ package com.qeema.util.common.security;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-public final class AuthenticationIdentity {
+public final class AuthenticationIdentityUtility {
 
-    private AuthenticationIdentity() {
+    private AuthenticationIdentityUtility() {
     }
 
     public static String subject(Authentication authentication) {

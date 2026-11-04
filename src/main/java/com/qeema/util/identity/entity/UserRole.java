@@ -14,11 +14,14 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "user_role", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "role_id" }))
 @Getter
 @Setter
+@NoArgsConstructor
 public class UserRole {
 
     @Id
@@ -37,14 +40,13 @@ public class UserRole {
     @Column(name = "assigned_at", insertable = false, updatable = false)
     private Instant assignedAt;
 
-    public UserRole() {
-    }
-
+    @Builder
     public UserRole(User user, AppRole role) {
         this.user = user;
         this.role = role;
     }
 
+    @Builder
     public UserRole(User user, AppRole role, Instant assignedAt) {
         this.user = user;
         this.role = role;

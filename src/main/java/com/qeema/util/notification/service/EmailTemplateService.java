@@ -16,7 +16,7 @@ import com.qeema.util.notification.dto.PreviewEmailResponse;
 import com.qeema.util.notification.entity.EmailTemplate;
 import com.qeema.util.notification.repository.EmailTemplateRepository;
 import com.qeema.util.notification.constants.NotificationConstants;
-import com.qeema.util.notification.mapper.EmailTemplateMapper;
+import com.qeema.util.notification.utility.EmailTemplateUtility;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +25,14 @@ public class EmailTemplateService implements EmailTemplateUseCase {
     private final EmailTemplateRepository templateRepository;
     private final EmailTemplateRenderer renderer;
     private final AuditService auditService;
-    private final EmailTemplateMapper templateMapper;
+    private final EmailTemplateUtility templateUtility;
 
     @Transactional(readOnly = true)
     public List<EmailTemplateResponse> getTemplates(Authentication authentication) {
-        List<EmailTemplateResponse> templates = templateRepository.findAll().stream().map(this::toResponse).toList();
+        List<EmailTemplateResponse> templates = templateRepository.findAll().stream()
+                .map(templateUtility::toResponse).toList();
 
-        auditService.record(authentication, NotificationConstants.TEMPLATES_LISTED,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATES_LISTED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.COLLECTION, NotificationConstants.SUCCESS, Map.of("count", templates.size()));
 
@@ -42,7 +43,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
     public PreviewEmailResponse preview(String name, Map<String, Object> variables, Authentication authentication) {
         EmailTemplate template = getEnabledTemplate(name);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_PREVIEWED,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATE_PREVIEWED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.PREVIEW, NotificationConstants.SUCCESS, Map.of("name", template.getName()));
 
@@ -53,10 +54,11 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
     @Transactional(readOnly = true)
     public EmailTemplateResponse getTemplate(String name, Authentication authentication) {
-        EmailTemplateResponse response = toResponse(templateRepository.findByName(name)
+        EmailTemplateResponse response = templateUtility.toResponse(templateRepository.findByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Email template not found: " + name)));
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_VIEWED, NotificationConstants.EMAIL_TEMPLATE,
+        auditService.recordAuditEvent(authentication, NotificationConstants.TEMPLATE_VIEWED,
+                NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS, Map.of("name", response.getName()));
 
         return response;
@@ -64,7 +66,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
     @Transactional
     public EmailTemplateResponse create(EmailTemplateRequest request, Authentication authentication) {
-        String name = normalizeName(request.getName());
+        String name = templateUtility.normalize(request.getName());
 
         if (templateRepository.existsByName(name)) {
             throw new IllegalArgumentException("Email template already exists: " + name);
@@ -75,19 +77,19 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
         EmailTemplate saved = templateRepository.save(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_CREATED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_CREATED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS, Map.of(),
                 Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
 
-        return toResponse(saved);
+        return templateUtility.toResponse(saved);
     }
 
     @Transactional
     public EmailTemplateResponse update(String name, EmailTemplateRequest request, Authentication authentication) {
-        EmailTemplate template = findTemplate(name);
+        EmailTemplate template = templateUtility.findEnabledTemplate(name);
 
-        String updatedName = normalizeName(request.getName());
+        String updatedName = templateUtility.normalize(request.getName());
 
         if (templateRepository.existsByNameAndIdNot(updatedName, template.getId())) {
             throw new IllegalArgumentException("Email template already exists: " + updatedName);
@@ -100,22 +102,22 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
         EmailTemplate saved = templateRepository.save(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_UPDATED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_UPDATED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS,
                 Map.of("name", template.getName(), "enabled", template.isEnabled()),
                 Map.of("name", saved.getName(), "enabled", saved.isEnabled()), Map.of("name", saved.getName()));
 
-        return toResponse(saved);
+        return templateUtility.toResponse(saved);
     }
 
     @Transactional
     public void delete(String name, Authentication authentication) {
-        EmailTemplate template = findTemplate(name);
+        EmailTemplate template = templateUtility.findEnabledTemplate(name);
 
         templateRepository.delete(template);
 
-        auditService.record(authentication, NotificationConstants.TEMPLATE_DELETED,
+        auditService.recordAuditEventWithSnapshots(authentication, NotificationConstants.TEMPLATE_DELETED,
                 NotificationConstants.EMAIL_TEMPLATE,
                 NotificationConstants.SINGLE, NotificationConstants.SUCCESS,
                 Map.of("name", template.getName(), "enabled", template.isEnabled()), Map.of(),
@@ -124,7 +126,7 @@ public class EmailTemplateService implements EmailTemplateUseCase {
 
     @Transactional(readOnly = true)
     public EmailTemplate getEnabledTemplate(String name) {
-        EmailTemplate template = findTemplate(name);
+        EmailTemplate template = templateUtility.findEnabledTemplate(name);
 
         if (!template.isEnabled()) {
             throw new IllegalArgumentException("Email template is disabled: " + name);
@@ -133,20 +135,4 @@ public class EmailTemplateService implements EmailTemplateUseCase {
         return template;
     }
 
-    private EmailTemplate findTemplate(String name) {
-        String normalizedName = normalizeName(name);
-        return templateRepository.findByName(normalizedName)
-                .orElseThrow(() -> new ResourceNotFoundException("Email template not found: " + normalizedName));
-    }
-
-    private String normalizeName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Template name must not be blank");
-        }
-        return name.trim();
-    }
-
-    private EmailTemplateResponse toResponse(EmailTemplate template) {
-        return templateMapper.toResponse(template);
-    }
 }

@@ -10,11 +10,14 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "documents")
 @Getter
 @Setter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class Document {
 
     @Id
@@ -52,9 +55,7 @@ public class Document {
         }
     }
 
-    protected Document() {
-    }
-
+    @Builder
     public Document(String title, String description, String ownerId) {
         this.title = title;
         this.description = description;

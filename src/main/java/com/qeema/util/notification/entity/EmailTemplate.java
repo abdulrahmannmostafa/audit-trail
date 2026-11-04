@@ -12,11 +12,14 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "email_template")
 @Getter
 @Setter
+@NoArgsConstructor
 public class EmailTemplate {
 
     @Id
@@ -49,9 +52,7 @@ public class EmailTemplate {
         }
     }
 
-    public EmailTemplate() {
-    }
-
+    @Builder
     public EmailTemplate(String name, String subjectTemplate, String htmlContent, boolean enabled) {
         this.name = name;
         this.subjectTemplate = subjectTemplate;

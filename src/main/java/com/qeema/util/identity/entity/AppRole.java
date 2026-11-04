@@ -8,11 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Entity
 @Table(name = "app_role")
 @Getter
 @Setter
+@NoArgsConstructor
 public class AppRole {
 
     @Id
@@ -23,9 +26,7 @@ public class AppRole {
     @Column(name = "name", length = 50, nullable = false, unique = true)
     private String name;
 
-    public AppRole() {
-    }
-
+    @Builder
     public AppRole(String name) {
         this.name = name;
     }

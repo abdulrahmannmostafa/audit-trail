@@ -7,8 +7,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,21 +44,21 @@ public class DocumentController {
     @Operation(summary = "Upload a document")
     public DocumentResponse upload(@RequestParam @NotBlank String title,
             @RequestParam(required = false) String description, @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
-        return documentService.upload(new DocumentUploadRequest(title, description), file, jwt);
+            Authentication authentication) {
+        return documentService.uploadDocument(new DocumentUploadRequest(title, description), file, authentication);
     }
 
     @GetMapping
     @Operation(summary = "List accessible documents")
-    public List<DocumentResponse> list(@AuthenticationPrincipal Jwt jwt) {
-        return documentService.list(jwt);
+    public List<DocumentResponse> list(Authentication authentication) {
+        return documentService.listDocuments(authentication);
     }
 
     @GetMapping("/{id}/download")
     @Operation(summary = "Download the current document version")
-    public ResponseEntity<InputStreamResource> download(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<InputStreamResource> download(@PathVariable String id, Authentication authentication) {
 
-        DocumentDownload download = documentService.download(id, jwt);
+        DocumentDownload download = documentService.downloadDocument(id, authentication);
 
         HttpHeaders headers = new HttpHeaders();
 
@@ -77,21 +76,21 @@ public class DocumentController {
 
     @GetMapping("/{id}/versions")
     @Operation(summary = "View document version history")
-    public List<DocumentVersionResponse> versions(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        return documentService.versions(id, jwt);
+    public List<DocumentVersionResponse> versions(@PathVariable String id, Authentication authentication) {
+        return documentService.listDocumentVersions(id, authentication);
     }
 
     @PostMapping(value = "/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a new document version")
     public DocumentVersionResponse uploadVersion(@PathVariable String id, @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
-        return documentService.uploadVersion(id, file, jwt);
+            Authentication authentication) {
+        return documentService.uploadVersion(id, file, authentication);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft-delete a document")
-    public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        documentService.delete(id, jwt);
+    public ResponseEntity<Void> delete(@PathVariable String id, Authentication authentication) {
+        documentService.deleteDocument(id, authentication);
         return ResponseEntity.noContent().build();
     }
 }

@@ -17,7 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.RequiredArgsConstructor;
 
 import com.qeema.util.audit.dto.AuditLogResponse;
-import com.qeema.util.audit.entity.AuditLog;
+import com.qeema.util.audit.annotation.Audited;
+import com.qeema.util.audit.constants.AuditConstants;
 import com.qeema.util.audit.mapper.AuditLogMapper;
 import com.qeema.util.audit.service.AuditQueryUseCase;
 
@@ -35,6 +36,7 @@ public class AuditController {
 
         @GetMapping
         @Operation(summary = "Search audit logs")
+        @Audited(action = AuditConstants.SEARCHED, entityType = AuditConstants.ENTITY_TYPE)
         @PreAuthorize("isAuthenticated()")
         public Page<AuditLogResponse> search(
                         @RequestParam(required = false) String actorId,
@@ -53,13 +55,14 @@ public class AuditController {
                 Instant toInstant = to == null ? null
                                 : to.plusDays(1).atStartOfDay(zone).toInstant();
 
-                return queryService.searchFor(authentication, actorId, action, entityType, entityId,
+                return queryService.searchForAuditLogs(authentication, actorId, action, entityType, entityId,
                                 fromInstant, toInstant, page, size)
                                 .map(mapper::toResponse);
         }
 
         @GetMapping("/{eventId}")
         @Operation(summary = "Get an audit event")
+        @Audited(action = AuditConstants.VIEWED, entityType = AuditConstants.ENTITY_TYPE)
         @PreAuthorize("hasRole('ADMIN') or @auditAuthorization.canReadEvent(authentication, #eventId)")
         public ResponseEntity<AuditLogResponse> get(
                         @PathVariable String eventId) {

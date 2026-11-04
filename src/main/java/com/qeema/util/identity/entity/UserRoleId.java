@@ -7,10 +7,13 @@ import java.io.Serializable;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 @Embeddable
 @Getter
 @Setter
+@NoArgsConstructor
 public class UserRoleId implements Serializable {
 
     @Column(name = "user_id", length = 36, nullable = false)
@@ -19,9 +22,7 @@ public class UserRoleId implements Serializable {
     @Column(name = "role_id", nullable = false)
     private Integer roleId;
 
-    public UserRoleId() {
-    }
-
+    @Builder
     public UserRoleId(String userId, Integer roleId) {
         this.userId = userId;
         this.roleId = roleId;
